@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VisuGeom - Platform Simulasi 3D Geometri Ruang SMP</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            nova: {
+              primary: '#0A1931',
+              card: '#1A3D63',
+              accent: '#4A7FA7',
+              ice: '#B3CFE5',
+              frost: '#F6FAFD'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Font & Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Three.js & Controls -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  
+  <style>
+    :root {
+      --bg-main: #F6FAFD;
+      --glass-panel: rgba(179, 207, 229, 0.35);
+      --glass-card: rgba(255, 255, 255, 0.7);
+      --glass-border: rgba(179, 207, 229, 0.5);
+      --glass-shadow: 0 12px 32px 0 rgba(10, 25, 49, 0.08);
+      --text-main: #0A1931;
+      --text-muted: #1A3D63;
+      --accent-color: #4A7FA7;
+      --accent-gradient: linear-gradient(135deg, #4A7FA7 0%, #1A3D63 100%);
+      --btn-text: #FFFFFF;
+      --grid-line: rgba(10, 25, 49, 0.06);
+    }
+
+    .dark {
+      --bg-main: #0A1931;
+      --glass-panel: rgba(26, 61, 99, 0.45);
+      --glass-card: rgba(26, 61, 99, 0.55);
+      --glass-border: rgba(74, 127, 167, 0.3);
+      --glass-shadow: 0 12px 32px 0 rgba(0, 0, 0, 0.37);
+      --text-main: #F6FAFD;
+      --text-muted: #B3CFE5;
+      --accent-color: #4A7FA7;
+      --accent-gradient: linear-gradient(135deg, #4A7FA7 0%, #B3CFE5 100%);
+      --btn-text: #0A1931;
+      --grid-line: rgba(179, 207, 229, 0.05);
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      font-family: 'Inter', sans-serif;
+      transition: background-color 0.4s ease, color 0.4s ease;
+      min-height: 100vh;
+    }
+
+    .nova-bg-glow {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: -1;
+      background: 
+        radial-gradient(circle at 10% 15%, rgba(74, 127, 167, 0.15), transparent 40%),
+        radial-gradient(circle at 90% 85%, rgba(179, 207, 229, 0.15), transparent 45%);
+    }
+
+    /* Glassmorphism Containers */
+    .nova-glass-panel {
+      background: var(--glass-panel);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      box-shadow: var(--glass-shadow);
+    }
+
+    .nova-glass-card {
+      background: var(--glass-card);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border);
+      box-shadow: var(--glass-shadow);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .nova-glass-card:hover:not(:disabled) {
+      transform: translateY(-4px) scale(1.01);
+      border-color: #4A7FA7;
+      box-shadow: 0 16px 36px 0 rgba(74, 127, 167, 0.25);
+    }
+
+    /* Primary Accent Button */
+    .nova-btn-accent {
+      background: var(--accent-gradient);
+      color: var(--btn-text);
+      font-weight: 700;
+      transition: all 0.25s ease;
+    }
+
+    .nova-btn-accent:hover {
+      filter: brightness(1.15);
+      box-shadow: 0 6px 20px rgba(74, 127, 167, 0.4);
+      transform: translateY(-1px);
+    }
+
+    /* Utility Controls */
+    .cbtn {
+      padding: 0.6rem;
+      border-radius: 0.75rem;
+      background: var(--glass-card);
+      border: 1px solid var(--glass-border);
+      color: var(--text-main);
+      width: 2.5rem;
+      height: 2.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+    .cbtn:hover {
+      background: #4A7FA7;
+      color: #FFFFFF;
+      border-color: #B3CFE5;
+    }
+    .cbtn.on {
+      background: #4A7FA7;
+      color: #FFFFFF;
+    }
+
+    input[type=range] {
+      accent-color: #4A7FA7;
+    }
+
+    .bg-grid-pattern {
+      background-size: 28px 28px;
+      background-image: linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+                        linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+    }
+
+    .qopt {
+      transition: all 0.2s ease;
+    }
+    .qopt.qok {
+      background: rgba(34, 197, 94, 0.25) !important;
+      border-color: #22c55e !important;
+      color: #15803d !important;
+    }
+    .dark .qopt.qok {
+      color: #4ade80 !important;
+    }
+    .qopt.qbad {
+      background: rgba(239, 68, 68, 0.25) !important;
+      border-color: #ef4444 !important;
+      color: #b91c1c !important;
+    }
+    .dark .qopt.qbad {
+      color: #f87171 !important;
+    }
+
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: var(--bg-main); }
+    ::-webkit-scrollbar-thumb { background: #4A7FA7; border-radius: 4px; }
+  </style>
+</head>
+<body class="flex flex-col min-h-screen font-sans antialiased">
+
+<div class="nova-bg-glow"></div>
+
+<!-- HEADER / NAVBAR -->
+<header class="nova-glass-panel sticky top-0 z-50 px-4 lg:px-8 py-3.5 rounded-b-3xl">
+  <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
+    <div class="flex items-center space-x-3 cursor-pointer" onclick="navigateTo('catalog')">
+      <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#4A7FA7] to-[#B3CFE5] flex items-center justify-center shadow-md">
+        <i class="fa-solid fa-cube text-[#0A1931] text-xl"></i>
+      </div>
+      <div>
+        <h1 class="text-xl font-black tracking-tight text-nova-primary dark:text-nova-frost">VisuGeom <span class="text-xs px-2.5 py-0.5 rounded-full bg-[#4A7FA7]/20 text-[#4A7FA7] dark:text-[#B3CFE5] border border-[#4A7FA7]/30 font-semibold">3D</span></h1>
+        <p class="text-[11px] opacity-75 hidden sm:block">Simulasi Visual & Materi Bangun Ruang</p>
+      </div>
+    </div>
+
+    <div class="flex items-center space-x-3">
+      <button id="btnBackToCatalog" onclick="navigateTo('catalog')" class="hidden px-4 py-2 rounded-2xl nova-glass-card text-xs font-semibold items-center gap-2">
+        <i class="fa-solid fa-arrow-left"></i> Katalog
+      </button>
+      <button onclick="navigateTo('hero')" class="p-2.5 rounded-2xl nova-glass-card text-xs" title="Beranda">
+        <i class="fa-solid fa-house"></i>
+      </button>
+      <button onclick="navigateTo('quiz')" class="px-4 py-2 rounded-2xl nova-btn-accent text-xs font-bold flex items-center gap-2 shadow-lg">
+        <i class="fa-solid fa-graduation-cap"></i> <span>Latihan</span>
+      </button>
+      <button id="btnTheme" onclick="toggleTheme()" title="Ganti Tema" class="cbtn">
+        <i id="themeIcon" class="fa-solid fa-sun text-amber-400"></i>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- MAIN CONTENT WRAPPER -->
+<main class="flex-1 w-full max-w-7xl mx-auto p-4 lg:p-6 flex flex-col justify-center">
+
+  <!-- HERO SECTION -->
+  <section id="secHero" class="py-10 md:py-16 flex flex-col items-center text-center space-y-8 max-w-4xl mx-auto">
+    <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#4A7FA7]/15 border border-[#4A7FA7]/30 text-[#4A7FA7] dark:text-[#B3CFE5] text-xs font-bold tracking-wide">
+      <i class="fa-solid fa-wand-magic-sparkles"></i> Media Interaktif Matematika SMP Berbasis WebGL 3D
+    </div>
+    
+    <h1 class="text-4xl sm:text-6xl font-black tracking-tight leading-tight">
+      Eksplorasi Geometri Ruang <br>
+      <span class="bg-gradient-to-r from-[#4A7FA7] via-[#758850] to-[#B3CFE5] bg-clip-text text-transparent">Secara Nyata & Interaktif</span>
+    </h1>
+    
+    <p class="text-sm sm:text-base opacity-80 max-w-2xl leading-relaxed">
+      Visualisasikan bangun ruang 3D, putar dari segala sudut, bedah jaring-jaringnya secara riil, hitung parameter luas & volume, dan latih kemampuan TKA kamu dengan 10 level tantangan!
+    </p>
+
+    <div class="flex flex-wrap gap-4 justify-center">
+      <button onclick="navigateTo('catalog')" class="px-8 py-4 rounded-3xl nova-btn-accent text-sm font-extrabold shadow-xl flex items-center gap-3">
+        <i class="fa-solid fa-cubes text-lg"></i>Katalog
+      </button>
+      <button onclick="navigateTo('quiz')" class="px-8 py-4 rounded-3xl nova-glass-card text-sm font-bold flex items-center gap-3">
+        <i class="fa-solid fa-trophy text-amber-500"></i>Latihan
+      </button>
+    </div>
+
+    <!-- Features Overview -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full pt-10 text-left">
+      <div class="nova-glass-panel p-5 rounded-3xl space-y-2">
+        <div class="w-10 h-10 rounded-2xl bg-[#4A7FA7]/20 flex items-center justify-center text-[#4A7FA7] dark:text-[#B3CFE5]">
+          <i class="fa-solid fa-arrows-rotate text-lg"></i>
+        </div>
+        <h3 class="text-sm font-bold">Rotasi 360° & Zoom</h3>
+        <p class="text-xs opacity-75">Kontrol OrbitControls kamera 3D secara presisi dan responsif.</p>
+      </div>
+      <div class="nova-glass-panel p-5 rounded-3xl space-y-2">
+        <div class="w-10 h-10 rounded-2xl bg-[#4A7FA7]/20 flex items-center justify-center text-[#4A7FA7] dark:text-[#B3CFE5]">
+          <i class="fa-solid fa-box-open text-lg"></i>
+        </div>
+        <h3 class="text-sm font-bold">Animasi Jaring-Jaring</h3>
+        <p class="text-xs opacity-75">Uraikan bangun ruang 3D menjadi jaring-jaring 2D secara mulus.</p>
+      </div>
+      <div class="nova-glass-panel p-5 rounded-3xl space-y-2">
+        <div class="w-10 h-10 rounded-2xl bg-[#4A7FA7]/20 flex items-center justify-center text-[#4A7FA7] dark:text-[#B3CFE5]">
+          <i class="fa-solid fa-calculator text-lg"></i>
+        </div>
+        <h3 class="text-sm font-bold">Kalkulator Dynamic</h3>
+        <p class="text-xs opacity-75">Ubah dimensi ukuran, bentuk 3D dan kalkulasi ikut beradaptasi secara real-time.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- KATALOG SECTION -->
+  <section id="secCatalog" class="hidden py-6 space-y-6">
+    <div class="text-center max-w-2xl mx-auto space-y-2">
+      <h2 class="text-3xl font-black">Katalog Bangun Ruang 3D</h2>
+      <p class="text-xs sm:text-sm opacity-75">Pilih salah satu objek geometri di bawah ini untuk memulai simulasi interaktif.</p>
+    </div>
+    <div id="catalogGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pt-4"></div>
+  </section>
+
+  <!-- DETAIL SIMULASI 3D SECTION -->
+  <section id="secDetail" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-6 my-auto">
+    <!-- Canvas & Controls -->
+    <div class="lg:col-span-7 xl:col-span-8 flex flex-col gap-4">
+      <div id="canvasContainer" class="relative nova-glass-panel rounded-3xl overflow-hidden shadow-2xl flex-1 min-h-[420px] lg:min-h-[500px] bg-grid-pattern">
+        <div id="threeCanvas" class="w-full h-full absolute inset-0 cursor-grab active:cursor-grabbing"></div>
+        
+        <!-- Shape Header Badge -->
+        <div class="absolute top-4 left-4 z-10 flex items-center space-x-2">
+          <span class="px-3.5 py-1.5 rounded-full nova-glass-panel text-xs font-extrabold flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-[#4A7FA7] animate-ping"></span>
+            <span id="badgeShapeName">Kubus 3D</span>
+          </span>
+          <span id="wireframeStatus" class="hidden px-3 py-1 rounded-full bg-amber-500/20 text-amber-500 border border-amber-500/40 text-[10px] font-mono font-bold">WIREFRAME</span>
+        </div>
+
+        <!-- Canvas Toolbar Bottom -->
+        <div class="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 w-[92%] max-w-md nova-glass-panel p-2 rounded-2xl shadow-2xl flex items-center justify-between gap-1">
+          <button onclick="toggleAutoRotate()" id="btnAutoRotate" title="Auto Rotate" class="cbtn"><i class="fa-solid fa-rotate"></i></button>
+          <button onclick="resetCameraView()" title="Reset Kamera" class="cbtn"><i class="fa-solid fa-arrows-to-dot"></i></button>
+          <button onclick="toggleWireframe()" id="btnWireframe" title="Wireframe Mode" class="cbtn"><i class="fa-solid fa-border-none"></i></button>
+          <div class="h-6 w-px bg-slate-500/30 mx-1"></div>
+          <button onclick="zoomCanvas(0.85)" title="Zoom In" class="cbtn"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
+          <button onclick="zoomCanvas(1.15)" title="Zoom Out" class="cbtn"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
+          <button onclick="toggleFullscreen()" title="Fullscreen" class="cbtn"><i class="fa-solid fa-expand"></i></button>
+        </div>
+      </div>
+
+      <!-- Quick Unsur & Karakteristik -->
+      <div class="nova-glass-panel p-5 rounded-3xl">
+        <h3 class="text-xs font-bold uppercase tracking-wider mb-3 text-[#4A7FA7] dark:text-[#B3CFE5]">
+          <i class="fa-solid fa-circle-info mr-1"></i> Unsur-Unsur Geometri
+        </h3>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+          <div class="nova-glass-card p-3 rounded-2xl">
+            <span class="text-[11px] opacity-75 block mb-1">Jumlah Sisi</span>
+            <span id="metaSisi" class="text-xl font-black text-[#4A7FA7] dark:text-[#B3CFE5]">6</span>
+          </div>
+          <div class="nova-glass-card p-3 rounded-2xl">
+            <span class="text-[11px] opacity-75 block mb-1">Jumlah Rusuk</span>
+            <span id="metaRusuk" class="text-xl font-black text-[#4A7FA7] dark:text-[#B3CFE5]">12</span>
+          </div>
+          <div class="nova-glass-card p-3 rounded-2xl">
+            <span class="text-[11px] opacity-75 block mb-1">Titik Sudut</span>
+            <span id="metaSudut" class="text-xl font-black text-[#4A7FA7] dark:text-[#B3CFE5]">8</span>
+          </div>
+          <div class="nova-glass-card p-3 rounded-2xl">
+            <span class="text-[11px] opacity-75 block mb-1">Bentuk Sisi</span>
+            <span id="metaBentuk" class="text-xs font-bold text-[#4A7FA7] dark:text-[#B3CFE5] block mt-1">Persegi</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar Info, Calculator, Nets -->
+    <div class="lg:col-span-5 xl:col-span-4 flex flex-col">
+      <div class="nova-glass-panel rounded-3xl p-6 flex flex-col h-full space-y-5">
+        <!-- Title & TTS -->
+        <div class="pb-3 border-b border-slate-500/20 flex items-start justify-between gap-3">
+          <div>
+            <h2 id="shapeTitle" class="text-2xl font-black">Kubus</h2>
+            <p id="shapeSubtitle" class="text-xs opacity-75 mt-0.5"></p>
+          </div>
+          <button onclick="toggleSpeech()" id="btnTTS" class="px-3.5 py-2 rounded-2xl nova-glass-card text-xs font-semibold flex items-center space-x-2 shrink-0">
+            <i id="ttsIcon" class="fa-solid fa-volume-high text-[#4A7FA7]"></i>
+            <span id="ttsText">Baca Suara</span>
+          </button>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="flex p-1 rounded-2xl nova-glass-card border border-slate-500/20">
+          <button onclick="switchTab('tabPengertian')" id="tabBtnPengertian" class="flex-1 py-2 text-xs font-bold rounded-xl transition">Konsep</button>
+          <button onclick="switchTab('tabRumus')" id="tabBtnRumus" class="flex-1 py-2 text-xs font-bold rounded-xl transition">Kalkulator</button>
+          <button onclick="switchTab('tabJaring')" id="tabBtnJaring" class="flex-1 py-2 text-xs font-bold rounded-xl transition">Jaring-jaring</button>
+        </div>
+
+        <!-- Tab Contents -->
+        <div class="flex-1 overflow-y-auto pr-1 space-y-4">
+          <!-- Tab Konsep -->
+          <div id="tabPengertian" class="space-y-4">
+            <div class="nova-glass-card p-4 rounded-2xl space-y-1">
+              <h4 class="text-xs font-extrabold uppercase text-[#4A7FA7] dark:text-[#B3CFE5]">Definisi</h4>
+              <p id="descText" class="text-xs leading-relaxed opacity-90"></p>
+            </div>
+            <div class="nova-glass-card p-4 rounded-2xl space-y-2">
+              <h4 class="text-xs font-extrabold uppercase text-[#4A7FA7] dark:text-[#B3CFE5]">Sifat-Sifat Utama</h4>
+              <ul id="sifatList" class="text-xs space-y-2 list-disc list-inside opacity-90"></ul>
+            </div>
+          </div>
+
+          <!-- Tab Kalkulator -->
+          <div id="tabRumus" class="hidden space-y-4">
+            <div class="nova-glass-card p-4 rounded-2xl space-y-3">
+              <h4 class="text-xs font-extrabold uppercase text-[#4A7FA7] dark:text-[#B3CFE5]">Dimensi Ukuran (cm)</h4>
+              <div id="calculatorInputs" class="space-y-3"></div>
+            </div>
+
+            <!-- Result Cards -->
+            <div class="nova-glass-card p-4 rounded-2xl border-l-4 border-l-[#4A7FA7]">
+              <span class="text-[11px] opacity-75 block mb-1">Luas Permukaan (L)</span>
+              <div class="flex items-baseline justify-between">
+                <span id="formulaLuas" class="text-xs font-mono opacity-75"></span>
+                <span id="resultLuas" class="text-lg font-black text-[#4A7FA7] dark:text-[#B3CFE5]"></span>
+              </div>
+            </div>
+
+            <div class="nova-glass-card p-4 rounded-2xl border-l-4 border-l-emerald-500">
+              <span class="text-[11px] opacity-75 block mb-1">Volume Ruang (V)</span>
+              <div class="flex items-baseline justify-between">
+                <span id="formulaVolume" class="text-xs font-mono opacity-75"></span>
+                <span id="resultVolume" class="text-lg font-black text-emerald-500"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab Jaring-jaring -->
+          <div id="tabJaring" class="hidden space-y-4">
+            <div class="nova-glass-card p-4 rounded-2xl space-y-3">
+              <h4 class="text-xs font-extrabold uppercase text-[#4A7FA7] dark:text-[#B3CFE5]">Simulasi Terurai 3D &rarr; 2D</h4>
+              <div id="netUnavailable" class="hidden p-3 rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-300 border border-amber-500/30 text-xs"></div>
+              <p class="text-xs opacity-90 leading-relaxed">Geser slider di bawah ini untuk mengamati proses pembukaan jaring-jaring bangun ruang secara riil.</p>
+              
+              <div class="flex justify-between text-xs font-bold pt-2">
+                <span>3D Padat</span>
+                <span id="unfoldPercent" class="text-[#4A7FA7] dark:text-[#B3CFE5]">0%</span>
+                <span>Jaring 2D</span>
+              </div>
+              <input type="range" id="netSlider" min="0" max="100" value="0" oninput="updateNetsUnfold(this.value)" class="w-full h-2 rounded-lg cursor-pointer">
+              
+              <div class="flex gap-2 pt-2">
+                <button onclick="animateNets(0)" class="flex-1 py-2 rounded-xl nova-glass-panel text-xs font-bold">Tutup (3D)</button>
+                <button onclick="animateNets(100)" class="flex-1 py-2 rounded-xl nova-btn-accent text-xs font-bold">Buka Penuh (2D)</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MODUL LATIHAN TKA SECTION -->
+  <section id="secQuiz" class="hidden py-6 w-full max-w-3xl mx-auto">
+    <div id="quizBody"></div>
+  </section>
+
+</main>
+
+<script>
+/* ==========================================
+   1. DATA GEOMETRI & RUMUS
+   ========================================== */
+const shapesData = {
+  kubus: {
+    title: "Kubus",
+    subtitle: "Prisma Reguler Sisi Persegi Sempurna",
+    badge: "Sisi Datar",
+    color: "#4A7FA7",
+    sisi: "6", rusuk: "12", sudut: "8", bentuk: "Persegi Kongruen",
+    short: "6 sisi persegi kongruen & 12 rusuk sama panjang.",
+    icon: '<polygon points="30,20 70,20 85,35 45,35"/><polygon points="30,20 45,35 45,80 30,65"/><polygon points="45,35 85,35 85,80 45,80"/>',
+    desc: "Kubus adalah bangun ruang tiga dimensi yang dibatasi oleh 6 bidang sisi berbentuk persegi kongruen. Semua rusuknya memiliki panjang yang persis sama.",
+    sifat: [
+      "Memiliki 6 sisi berbentuk persegi kongruen.",
+      "Memiliki 12 rusuk sama panjang.",
+      "Memiliki 8 titik sudut siku-siku.",
+      "Panjang diagonal ruang d = s√3."
+    ],
+    params: [{ name: "Sisi (s)", id: "sisi", min: 1, max: 20, value: 5 }],
+    calc: p => ({
+      luasFormula: "L = 6 × s²",
+      luasVal: (6 * p.sisi ** 2).toFixed(1) + " cm²",
+      volFormula: "V = s³",
+      volVal: (p.sisi ** 3).toFixed(1) + " cm³"
+    })
+  },
+  balok: {
+    title: "Balok",
+    subtitle: "Prisma Tegak Sisi Persegi Panjang",
+    badge: "Sisi Datar",
+    color: "#B3CFE5",
+    sisi: "6", rusuk: "12", sudut: "8", bentuk: "Persegi Panjang",
+    short: "3 pasang sisi persegi panjang sejajar & kongruen.",
+    icon: '<polygon points="20,30 65,30 85,45 40,45"/><polygon points="20,30 40,45 40,75 20,60"/><polygon points="40,45 85,45 85,75 40,75"/>',
+    desc: "Balok adalah bangun ruang tiga dimensi yang dibentuk oleh tiga pasang persegi panjang dengan pasang bidang yang berhadapan bersifat sejajar dan sama besar.",
+    sifat: [
+      "Memiliki 6 sisi (3 pasang sejajar kongruen).",
+      "Memiliki 12 rusuk (4p, 4l, 4t).",
+      "Memiliki 8 titik sudut.",
+      "Diagonal ruang d = √(p² + l² + t²)."
+    ],
+    params: [
+      { name: "Panjang (p)", id: "p", min: 1, max: 20, value: 6 },
+      { name: "Lebar (l)", id: "l", min: 1, max: 20, value: 4 },
+      { name: "Tinggi (t)", id: "t", min: 1, max: 20, value: 3 }
+    ],
+    calc: ({ p, l, t }) => ({
+      luasFormula: "L = 2 × (pl + pt + lt)",
+      luasVal: (2 * (p * l + p * t + l * t)).toFixed(1) + " cm²",
+      volFormula: "V = p × l × t",
+      volVal: (p * l * t).toFixed(1) + " cm³"
+    })
+  },
+  prisma: {
+    title: "Prisma Segitiga",
+    subtitle: "Alas & Tutup Segitiga Kongruen",
+    badge: "Sisi Datar",
+    color: "#22c55e",
+    sisi: "5", rusuk: "9", sudut: "6", bentuk: "Segitiga & Persegi Panjang",
+    short: "Dua alas segitiga identik dihubungkan bidang tegak.",
+    icon: '<polygon points="50,20 20,40 80,40"/><polygon points="20,40 80,40 80,80 20,80"/><polygon points="50,20 80,40 80,80 50,60"/>',
+    desc: "Prisma Segitiga adalah bangun ruang yang dibatasi oleh dua segitiga identik yang sejajar dan tiga sisi tegak berbentuk persegi panjang.",
+    sifat: [
+      "Memiliki 2 sisi alas-tutup berbentuk segitiga.",
+      "Memiliki 3 sisi tegak persegi panjang.",
+      "Memiliki 9 rusuk dan 6 titik sudut.",
+      "Rusuk tegak sama panjang dan sejajar."
+    ],
+    params: [
+      { name: "Alas Segitiga (a)", id: "a", min: 1, max: 20, value: 4 },
+      { name: "Tinggi Segitiga (t_a)", id: "ta", min: 1, max: 20, value: 3 },
+      { name: "Tinggi Prisma (t_p)", id: "tp", min: 1, max: 20, value: 7 }
+    ],
+    calc: ({ a, ta, tp }) => {
+      const c = Math.hypot(a / 2, ta);
+      const la = 0.5 * a * ta;
+      return {
+        luasFormula: "L = 2(L.Alas) + (K.Alas × t)",
+        luasVal: (2 * la + (a + 2 * c) * tp).toFixed(1) + " cm²",
+        volFormula: "V = L.Alas × t",
+        volVal: (la * tp).toFixed(1) + " cm³"
+      };
+    }
+  },
+  limas: {
+    title: "Limas Segiempat",
+    subtitle: "Alas Segiempat Sisi Tegak Segitiga",
+    badge: "Sisi Datar",
+    color: "#eab308",
+    sisi: "5", rusuk: "8", sudut: "5", bentuk: "Persegi & Segitiga",
+    short: "Sisi tegak segitiga bertemu pada satu titik puncak.",
+    icon: '<polygon points="50,15 20,70 50,85 80,70"/><polygon points="50,15 20,70 50,85"/><polygon points="50,15 50,85 80,70"/>',
+    desc: "Limas Segiempat adalah bangun ruang yang dibatasi oleh satu alas segiempat dan empat bidang segitiga yang bertemu pada satu titik puncak.",
+    sifat: [
+      "Memiliki 1 alas berbentuk segiempat.",
+      "Memiliki 4 sisi tegak segitiga.",
+      "Memiliki 8 rusuk dan 5 titik sudut.",
+      "Memiliki 1 titik puncak utama."
+    ],
+    params: [
+      { name: "Sisi Alas (s)", id: "s", min: 1, max: 20, value: 5 },
+      { name: "Tinggi Limas (t)", id: "t", min: 1, max: 20, value: 6 }
+    ],
+    calc: ({ s, t }) => {
+      const ts = Math.hypot(s / 2, t);
+      return {
+        luasFormula: "L = L.Alas + Σ L.SisiTegak",
+        luasVal: (s * s + 4 * 0.5 * s * ts).toFixed(1) + " cm²",
+        volFormula: "V = 1/3 × L.Alas × t",
+        volVal: ((s * s * t) / 3).toFixed(1) + " cm³"
+      };
+    }
+  },
+  tabung: {
+    title: "Tabung (Silinder)",
+    subtitle: "Sisi Lengkung Berundak Lingkaran",
+    badge: "Sisi Lengkung",
+    color: "#38bdf8",
+    sisi: "3", rusuk: "2", sudut: "0", bentuk: "Lingkaran & Selimut Lengkung",
+    short: "Alas & tutup lingkaran dihubungkan selimut lengkung.",
+    icon: '<ellipse cx="50" cy="25" rx="30" ry="10"/><path d="M20,25 L20,75 A30,10 0 0,0 80,75 L80,25"/>',
+    desc: "Tabung adalah bangun ruang sisi lengkung yang dibentuk oleh dua lingkaran sejajar kongruen dan selimut lengkung berbentuk persegi panjang yang digulung.",
+    sifat: [
+      "Memiliki 2 sisi sejajar lingkaran (alas & tutup).",
+      "Memiliki 1 selimut lengkung.",
+      "Memiliki 2 rusuk lengkung melingkar.",
+      "Tidak memiliki titik sudut."
+    ],
+    params: [
+      { name: "Jari-jari (r)", id: "r", min: 1, max: 15, value: 4 },
+      { name: "Tinggi (t)", id: "t", min: 1, max: 20, value: 8 }
+    ],
+    calc: ({ r, t }) => ({
+      luasFormula: "L = 2πr(r + t)",
+      luasVal: (2 * Math.PI * r * (r + t)).toFixed(1) + " cm²",
+      volFormula: "V = π × r² × t",
+      volVal: (Math.PI * r * r * t).toFixed(1) + " cm³"
+    })
+  },
+  kerucut: {
+    title: "Kerucut",
+    subtitle: "Alas Lingkaran Berpuncak Lancip",
+    badge: "Sisi Lengkung",
+    color: "#a855f7",
+    sisi: "2", rusuk: "1", sudut: "1 (Puncak)", bentuk: "Lingkaran & Juring Selimut",
+    short: "Limoid beralas lingkaran dengan satu titik puncak.",
+    icon: '<path d="M50,15 L20,75 A30,10 0 0,0 80,75 Z"/><ellipse cx="50" cy="75" rx="30" ry="10"/>',
+    desc: "Kerucut adalah bangun ruang sisi lengkung berwujud limas istimewa beralas lingkaran dengan selimut melengkung menuju satu puncak.",
+    sifat: [
+      "Memiliki 1 alas berbentuk lingkaran.",
+      "Memiliki 1 selimut melengkung.",
+      "Memiliki 1 titik puncak.",
+      "Panjang garis pelukis s = √(r² + t²)."
+    ],
+    params: [
+      { name: "Jari-jari (r)", id: "r", min: 1, max: 15, value: 4 },
+      { name: "Tinggi (t)", id: "t", min: 1, max: 20, value: 7 }
+    ],
+    calc: ({ r, t }) => {
+      const s = Math.hypot(r, t);
+      return {
+        luasFormula: "L = πr(r + s)",
+        luasVal: (Math.PI * r * (r + s)).toFixed(1) + " cm²",
+        volFormula: "V = 1/3 × πr²t",
+        volVal: ((Math.PI * r * r * t) / 3).toFixed(1) + " cm³"
+      };
+    }
+  },
+  bola: {
+    title: "Bola",
+    subtitle: "Sisi Lengkung Sempurna Simetris",
+    badge: "Sisi Lengkung",
+    color: "#f43f5e",
+    sisi: "1", rusuk: "0", sudut: "0", bentuk: "Permukaan Lengkung Utuh",
+    short: "Setiap titik permukaan berjarak sama ke titik pusat.",
+    icon: '<circle cx="50" cy="50" r="35"/><ellipse cx="50" cy="50" rx="35" ry="12" stroke-dasharray="3,3"/>',
+    desc: "Bola adalah bangun ruang tiga dimensi yang dibentuk oleh tak hingga lingkaran berjari-jari sama panjang dan berpusat pada satu titik yang sama.",
+    sifat: [
+      "Hanya memiliki 1 sisi permukaan lengkung.",
+      "Tidak memiliki rusuk dan titik sudut.",
+      "Setiap titik pada permukaan berjarak sama (r) ke titik pusat.",
+      "Memiliki simetri lipat & putar tak terhingga."
+    ],
+    params: [{ name: "Jari-jari (r)", id: "r", min: 1, max: 15, value: 5 }],
+    calc: ({ r }) => ({
+      luasFormula: "L = 4 × π × r²",
+      luasVal: (4 * Math.PI * r * r).toFixed(1) + " cm²",
+      volFormula: "V = 4/3 × π × r³",
+      volVal: (((4 / 3) * Math.PI * r ** 3)).toFixed(1) + " cm³"
+    })
+  }
+};
+
+/* ==========================================
+   2. GENERASI KATALOG INTERAKTIF
+   ========================================== */
+document.getElementById('catalogGrid').innerHTML = Object.entries(shapesData).map(([k, d]) => `
+  <div onclick="openShapeDetail('${k}')" class="nova-glass-card p-6 rounded-3xl cursor-pointer flex flex-col justify-between group">
+    <div class="flex flex-col items-center text-center relative">
+      <span class="absolute top-0 right-0 px-3 py-1 rounded-full text-[10px] font-extrabold" style="color:${d.color}; background:${d.color}20; border:1px solid ${d.color}40">${d.badge}</span>
+      <svg class="w-24 h-24 my-4 group-hover:scale-110 transition-transform duration-300" style="color:${d.color}" viewBox="0 0 100 100" fill="currentColor" fill-opacity=".2" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round">${d.icon}</svg>
+      <h3 class="text-xl font-black">${d.title}</h3>
+      <p class="text-xs opacity-75 mt-1">${d.short}</p>
+    </div>
+    <div class="mt-6 pt-4 border-t border-slate-500/20 flex items-center justify-between text-xs font-bold">
+      <span class="opacity-70"><i class="fa-solid fa-shapes mr-1" style="color:${d.color}"></i> ${d.sisi} Sisi</span>
+      <span class="flex items-center gap-1" style="color:${d.color}">Simulasi 3D <i class="fa-solid fa-arrow-right text-[10px]"></i></span>
+    </div>
+  </div>
+`).join('');
+
+/* ==========================================
+   3. GLOBAL STATE & THREE.JS ENGINE
+   ========================================== */
+let scene, camera, renderer, controls, currentMeshGroup = null;
+let currentShapeKey = 'kubus', isAutoRotate = false, isWireframe = false, netFoldFactor = 0, currentParams = {};
+const synth = window.speechSynthesis || null;
+
+function navigateTo(target) {
+  clearInterval(Q.tm);
+  ['secHero', 'secCatalog', 'secDetail', 'secQuiz'].forEach(id => document.getElementById(id).classList.add('hidden'));
+  
+  const back = document.getElementById('btnBackToCatalog');
+  back.classList.add('hidden'); back.classList.remove('flex');
+
+  if (target === 'hero') document.getElementById('secHero').classList.remove('hidden');
+  else if (target === 'catalog') document.getElementById('secCatalog').classList.remove('hidden');
+  else if (target === 'quiz') { document.getElementById('secQuiz').classList.remove('hidden'); renderQuizMap(); }
+  else if (target === 'detail') {
+    document.getElementById('secDetail').classList.remove('hidden');
+    back.classList.remove('hidden'); back.classList.add('flex');
+    setTimeout(() => { if (!renderer) initThreeEngine(); else onWindowResize(); }, 50);
+  }
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (synth && synth.speaking) { synth.cancel(); setTTSState(false); }
+}
+
+function openShapeDetail(k) { navigateTo('detail'); changeShape(k); }
+
+/* Init Three.js WebGL Engine */
+function initThreeEngine() {
+  const c = document.getElementById('threeCanvas');
+  scene = new THREE.Scene();
+  
+  camera = new THREE.PerspectiveCamera(45, c.clientWidth / c.clientHeight, 0.1, 1000);
+  camera.position.set(4.5, 3.5, 5.5);
+  
+  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setSize(c.clientWidth, c.clientHeight);
+  renderer.setPixelRatio(window.devicePixelRatio);
+  c.appendChild(renderer.domElement);
+
+  controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.05;
+  controls.autoRotateSpeed = 2;
+
+  scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+  const d1 = new THREE.DirectionalLight(0xffffff, 0.8); d1.position.set(10, 15, 10); scene.add(d1);
+  const d2 = new THREE.DirectionalLight(0x4A7FA7, 0.4); d2.position.set(-10, -10, -10); scene.add(d2);
+
+  applyThemeScene();
+  window.addEventListener('resize', onWindowResize);
+
+  (function loop() {
+    requestAnimationFrame(loop);
+    controls.autoRotate = isAutoRotate;
+    controls.update();
+    renderer.render(scene, camera);
+  })();
+
+  buildShape3D(currentShapeKey);
+}
+
+function onWindowResize() {
+  const c = document.getElementById('threeCanvas');
+  if (!c || !camera || !renderer || !c.clientWidth) return;
+  camera.aspect = c.clientWidth / c.clientHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(c.clientWidth, c.clientHeight);
+}
+
+function disposeGroup(g) {
+  g.traverse(o => {
+    if (o.geometry) o.geometry.dispose();
+    if (o.material) o.material.dispose();
+  });
+}
+
+function buildShape3D(key) {
+  if (!scene) return;
+  if (currentMeshGroup) { scene.remove(currentMeshGroup); disposeGroup(currentMeshGroup); }
+  
+  const g = currentMeshGroup = new THREE.Group();
+  const mat = new THREE.MeshStandardMaterial({
+    color: 0x4A7FA7,
+    roughness: 0.25,
+    metalness: 0.1,
+    wireframe: isWireframe,
+    side: THREE.DoubleSide
+  });
+
+  switch (key) {
+    case 'kubus': createBoxNets(g, mat, 2, 2, 2); break;
+    case 'balok': createBoxNets(g, mat, 3, 1.5, 2); break;
+    case 'prisma': createPrism(g, mat); break;
+    case 'limas': createPyramid(g, mat); break;
+    case 'tabung': createCylinder(g, mat); break;
+    case 'kerucut': createCone(g, mat); break;
+    case 'bola': createSphere(g, mat); break;
+  }
+
+  const cp = currentParams || {};
+  if (key === 'kubus' && cp.sisi) g.scale.setScalar(cp.sisi / 5);
+  if (key === 'balok' && cp.p) g.scale.set(cp.p / 6, cp.t / 3, cp.l / 4);
+
+  scene.add(g);
+  updateNetsUnfold(netFoldFactor);
+}
+
+/* 3D Geometry Net Generators */
+function makeFace(w, h, mat, rx = 0, ry = 0, rz = 0) {
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat.clone());
+  m.rotation.set(rx, ry, rz);
+  return m;
+}
+
+function createBoxNets(g, mat, w, h, d) {
+  const hw = w / 2, hh = h / 2, hd = d / 2;
+  g.userData.hinges = []; g.userData.noNet = false;
+  const base = new THREE.Group(); g.add(base);
+  
+  const bottom = makeFace(w, d, mat, Math.PI / 2, 0, 0);
+  bottom.position.y = -hh; base.add(bottom);
+
+  const hinge = (parent, pos, mesh, mpos, axis, ang) => {
+    const hg = new THREE.Group(); hg.position.set(...pos); parent.add(hg);
+    mesh.position.set(...mpos); hg.add(mesh);
+    g.userData.hinges.push({ group: hg, axis, targetAngle: ang });
+    return hg;
+  };
+
+  hinge(base, [0, -hh, hd], makeFace(w, h, mat), [0, hh, 0], 'x', Math.PI / 2);
+  const back = hinge(base, [0, -hh, -hd], makeFace(w, h, mat), [0, hh, 0], 'x', -Math.PI / 2);
+  hinge(base, [-hw, -hh, 0], makeFace(d, h, mat, 0, -Math.PI / 2, 0), [0, hh, 0], 'z', Math.PI / 2);
+  hinge(base, [hw, -hh, 0], makeFace(d, h, mat, 0, Math.PI / 2, 0), [0, hh, 0], 'z', -Math.PI / 2);
+  hinge(back, [0, h, 0], makeFace(w, d, mat, -Math.PI / 2, 0, 0), [0, 0, hd], 'x', -Math.PI / 2);
+}
+
+const PK = 0.4;
+function P(id, def) { const v = currentParams && currentParams[id]; return (v !== undefined ? v : def) * PK; }
+
+function mkHinge(g, parent, pos, mesh, mpos, axis, open, closed = 0, yaw = 0) {
+  const pv = new THREE.Group(); pv.position.set(...pos); pv.rotation.y = yaw; parent.add(pv);
+  const hg = new THREE.Group(); pv.add(hg);
+  if (mesh) { mesh.position.set(...mpos); hg.add(mesh); }
+  g.userData.hinges.push({ group: hg, axis, targetAngle: open, closed });
+  return hg;
+}
+
+function triMesh(mat, pts) {
+  const sh = new THREE.Shape();
+  pts.forEach((q, i) => i ? sh.lineTo(q[0], q[1]) : sh.moveTo(q[0], q[1]));
+  const m = new THREE.Mesh(new THREE.ShapeGeometry(sh), mat.clone());
+  m.rotation.x = Math.PI / 2;
+  return m;
+}
+
+function circleMesh(mat, r) {
+  const m = new THREE.Mesh(new THREE.CircleGeometry(r, 48), mat.clone());
+  m.rotation.x = Math.PI / 2;
+  return m;
+}
+
+function netInit(g) { g.userData.hinges = []; g.userData.noNet = false; return new THREE.Group(); }
+
+function createPrism(g, mat) {
+  const a = P('a', 4), ta = P('ta', 3), H = P('tp', 7);
+  const base = netInit(g); g.add(base);
+  const V = [[-a / 2, -ta / 3], [a / 2, -ta / 3], [0, 2 * ta / 3]];
+  const bot = triMesh(mat, V); bot.position.y = -H / 2; base.add(bot);
+  let wall0;
+  for (let i = 0; i < 3; i++) {
+    const A = V[i], B = V[(i + 1) % 3], dx = B[0] - A[0], dz = B[1] - A[1], L = Math.hypot(dx, dz);
+    const mx = (A[0] + B[0]) / 2, mz = (A[1] + B[1]) / 2;
+    let nx = dz / L, nz = -dx / L; if (nx * mx + nz * mz < 0) { nx = -nx; nz = -nz; }
+    const hg = mkHinge(g, base, [mx, -H / 2, mz], makeFace(L, H, mat), [0, H / 2, 0], 'x', Math.PI / 2, 0, Math.atan2(nx, nz));
+    if (i === 0) wall0 = hg;
+  }
+  mkHinge(g, wall0, [0, H, 0], triMesh(mat, [[-a / 2, 0], [a / 2, 0], [0, -ta]]), [0, 0, 0], 'x', Math.PI / 2);
+}
+
+function createPyramid(g, mat) {
+  const s = P('s', 5), t = P('t', 6), h = s / 2;
+  const base = netInit(g); g.add(base);
+  const bot = makeFace(s, s, mat, Math.PI / 2, 0, 0); bot.position.y = -t / 2; base.add(bot);
+  const ts = Math.hypot(h, t), closed = -(Math.PI - Math.atan2(t, h));
+  [[0, 1], [1, 0], [0, -1], [-1, 0]].forEach(([nx, nz]) => {
+    mkHinge(g, base, [nx * h, -t / 2, nz * h], triMesh(mat, [[-h, 0], [h, 0], [0, ts]]), [0, 0, 0], 'x', 0, closed, Math.atan2(nx, nz));
+  });
+}
+
+function createCylinder(g, mat) {
+  const r = P('r', 4), t = P('t', 8), N = 48, w = 2 * r * Math.tan(Math.PI / N);
+  const base = netInit(g); g.add(base); g.userData.shiftX = (N - 1) / 2 * w;
+  const bot = circleMesh(mat, r); bot.position.y = -t / 2; base.add(bot);
+  const first = mkHinge(g, base, [0, -t / 2, r], makeFace(w, t, mat), [0, t / 2, 0], 'x', Math.PI / 2);
+  let prev = first;
+  for (let i = 1; i < N; i++) prev = mkHinge(g, prev, [i === 1 ? w / 2 : w, 0, 0], makeFace(w, t, mat), [w / 2, t / 2, 0], 'y', 0, 2 * Math.PI / N);
+  mkHinge(g, first, [0, t, 0], circleMesh(mat, r), [0, 0, -r], 'x', Math.PI / 2);
+}
+
+function createCone(g, mat) {
+  const r = P('r', 4), t = P('t', 7), N = 48, w = 2 * r * Math.tan(Math.PI / N);
+  const h0 = Math.hypot(r, t), sv = Math.hypot(h0, w / 2), d = 2 * Math.asin(w / 2 / sv);
+  const al = Math.atan2(t, r), beta = Math.acos(Math.sin(al) ** 2 * Math.cos(2 * Math.PI / N) + Math.cos(al) ** 2);
+  const base = netInit(g); g.add(base);
+  const bot = circleMesh(mat, r); bot.position.y = -t / 2; base.add(bot);
+  let prev = mkHinge(g, base, [0, -t / 2, r], triMesh(mat, [[-w / 2, 0], [w / 2, 0], [0, h0]]), [0, 0, 0], 'x', 0, -(Math.PI - al));
+  const tri = [[0, 0], [sv, 0], [sv * Math.cos(d), sv * Math.sin(d)]];
+  for (let i = 1; i < N; i++)
+    prev = mkHinge(g, prev, i === 1 ? [0, 0, h0] : [0, 0, 0], triMesh(mat, tri), [0, 0, 0], 'x', 0, -beta, i === 1 ? Math.atan2(h0, w / 2) : -d);
+}
+
+function createSphere(g, mat) {
+  const m = new THREE.Mesh(new THREE.SphereGeometry(P('r', 5), 40, 40), mat.clone());
+  g.add(m); g.userData.hinges = []; g.userData.noNet = true;
+}
+
+/* Unfolding Logic */
+function updateNetsUnfold(val) {
+  val = Math.max(0, Math.min(100, Number(val) || 0)); netFoldFactor = val;
+  document.getElementById('unfoldPercent').innerText = val + '%';
+  const slider = document.getElementById('netSlider'); slider.value = val;
+  const noNet = !!(currentMeshGroup && currentMeshGroup.userData.noNet);
+  const un = document.getElementById('netUnavailable');
+  un.textContent = 'Bola tidak memiliki bentuk jaring-jaring datar 2D.';
+  un.classList.toggle('hidden', !noNet); slider.disabled = noNet;
+  if (!currentMeshGroup || noNet) return;
+  currentMeshGroup.position.x = -(currentMeshGroup.userData.shiftX || 0) * val / 100;
+  (currentMeshGroup.userData.hinges || []).forEach(h => { const c = h.closed || 0; h.group.rotation[h.axis] = c + (h.targetAngle - c) * val / 100; });
+}
+
+let netTimer = null;
+function animateNets(target) {
+  if (currentMeshGroup && currentMeshGroup.userData.noNet) return;
+  clearInterval(netTimer);
+  let cur = netFoldFactor; if (cur === target) return;
+  const step = target > cur ? 2 : -2;
+  netTimer = setInterval(() => {
+    cur += step;
+    if ((step > 0 && cur >= target) || (step < 0 && cur <= target)) { cur = target; clearInterval(netTimer); }
+    updateNetsUnfold(cur);
+  }, 15);
+}
+
+/* ==========================================
+   4. UI CONTROLLER & CALCULATOR
+   ========================================== */
+function changeShape(key) {
+  currentShapeKey = key; const d = shapesData[key];
+  clearInterval(netTimer); netFoldFactor = 0;
+  document.getElementById('badgeShapeName').innerText = d.title + " 3D";
+  document.getElementById('shapeTitle').innerText = d.title;
+  document.getElementById('shapeSubtitle').innerText = d.subtitle;
+  document.getElementById('descText').innerText = d.desc;
+  document.getElementById('metaSisi').innerText = d.sisi;
+  document.getElementById('metaRusuk').innerText = d.rusuk;
+  document.getElementById('metaSudut').innerText = d.sudut;
+  document.getElementById('metaBentuk').innerText = d.bentuk;
+  
+  const ul = document.getElementById('sifatList'); ul.innerHTML = '';
+  d.sifat.forEach(s => { const li = document.createElement('li'); li.innerText = s; ul.appendChild(li); });
+  
+  renderCalculatorInputs(d);
+  buildShape3D(key);
+  switchTab('tabPengertian');
+  if (synth && synth.speaking) { synth.cancel(); setTTSState(false); }
+}
+
+function renderCalculatorInputs(d) {
+  const c = document.getElementById('calculatorInputs'); c.innerHTML = '';
+  const pv = {};
+  d.params.forEach(p => {
+    pv[p.id] = p.value;
+    const w = document.createElement('div'); w.className = 'space-y-1';
+    w.innerHTML = `
+      <div class="flex justify-between text-xs font-bold">
+        <span>${p.name}</span>
+        <span id="val_${p.id}" class="font-mono text-[#4A7FA7] dark:text-[#B3CFE5]">${p.value} cm</span>
+      </div>
+      <input type="range" data-param-id="${p.id}" min="${p.min}" max="${p.max}" value="${p.value}" oninput="updateParamValue('${p.id}',this.value)" class="w-full h-1.5 rounded-lg cursor-pointer">`;
+    c.appendChild(w);
+  });
+  currentParams = pv; calculateResult(pv);
+}
+
+function updateParamValue(id, val) {
+  document.getElementById('val_' + id).innerText = val + ' cm';
+  const pv = {};
+  shapesData[currentShapeKey].params.forEach(p => {
+    const i = document.querySelector(`input[data-param-id="${p.id}"]`);
+    pv[p.id] = parseFloat(i ? i.value : p.value);
+  });
+  currentParams = pv; calculateResult(pv); buildShape3D(currentShapeKey);
+}
+
+function calculateResult(pv) {
+  const r = shapesData[currentShapeKey].calc(pv);
+  document.getElementById('formulaLuas').innerText = r.luasFormula;
+  document.getElementById('resultLuas').innerText = r.luasVal;
+  document.getElementById('formulaVolume').innerText = r.volFormula;
+  document.getElementById('resultVolume').innerText = r.volVal;
+}
+
+function switchTab(id) {
+  const map = { tabPengertian: 'tabBtnPengertian', tabRumus: 'tabBtnRumus', tabJaring: 'tabBtnJaring' };
+  Object.keys(map).forEach(k => {
+    document.getElementById(k).classList.toggle('hidden', k !== id);
+    document.getElementById(map[k]).className = 'flex-1 py-2 text-xs font-bold rounded-xl transition ' + (k === id ? 'nova-btn-accent shadow-sm' : 'opacity-70 hover:opacity-100');
+  });
+}
+
+function toggleAutoRotate() { isAutoRotate = !isAutoRotate; document.getElementById('btnAutoRotate').classList.toggle('on', isAutoRotate); }
+function resetCameraView() { if (!camera) return; camera.position.set(4.5, 3.5, 5.5); controls.target.set(0, 0, 0); controls.update(); }
+function toggleWireframe() {
+  isWireframe = !isWireframe;
+  document.getElementById('wireframeStatus').classList.toggle('hidden', !isWireframe);
+  document.getElementById('btnWireframe').classList.toggle('on', isWireframe);
+  buildShape3D(currentShapeKey);
+}
+function zoomCanvas(f) {
+  if (!camera) return;
+  const d = camera.position.length(), n = Math.max(3.5, Math.min(30, d * f));
+  camera.position.multiplyScalar(n / d); controls.update();
+}
+function toggleFullscreen() {
+  const c = document.getElementById('canvasContainer');
+  if (!document.fullscreenElement) { c.requestFullscreen && c.requestFullscreen().catch(e => alert('Gagal Fullscreen: ' + e.message)); }
+  else document.exitFullscreen();
+}
+
+/* Text-to-Speech */
+function toggleSpeech() {
+  if (!synth) { alert('Browser tidak mendukung Text-to-Speech.'); return; }
+  if (synth.speaking) { synth.cancel(); setTTSState(false); return; }
+  const d = shapesData[currentShapeKey];
+  const u = new SpeechSynthesisUtterance(`${d.title}. ${d.subtitle}. ${d.desc} Sifat utamanya: ${d.sifat.join(', ')}`);
+  u.lang = 'id-ID'; u.rate = 0.95; u.onend = u.onerror = () => setTTSState(false);
+  synth.speak(u); setTTSState(true);
+}
+function setTTSState(on) {
+  document.getElementById('btnTTS').classList.toggle('nova-btn-accent', on);
+  document.getElementById('ttsIcon').className = on ? 'fa-solid fa-square-stop animate-pulse text-rose-400' : 'fa-solid fa-volume-high text-[#4A7FA7]';
+  document.getElementById('ttsText').innerText = on ? 'Hentikan' : 'Baca Suara';
+}
+
+/* Theme Switching & WebGL Dynamic Lighting */
+const isDark = () => document.documentElement.classList.contains('dark');
+function applyThemeScene() {
+  if (!scene) return;
+  const dark = isDark();
+  scene.background = new THREE.Color(dark ? 0x0A1931 : 0xF6FAFD);
+}
+function syncThemeIcon() {
+  document.getElementById('themeIcon').className = isDark() ? 'fa-solid fa-sun text-amber-400' : 'fa-solid fa-moon text-indigo-600';
+}
+function toggleTheme() {
+  const dark = !isDark();
+  document.documentElement.classList.toggle('dark', dark);
+  try { localStorage.setItem('vg-theme', dark ? 'dark' : 'light'); } catch (e) {}
+  syncThemeIcon(); applyThemeScene();
+}
+
+/* ==========================================
+   5. TKA GEOMETRI QUIZ MODULE (10 LEVELS x 10 SOAL)
+   ========================================== */
+const quizLevels = [
+  {
+    id: 1, title: "Unsur & Karakteristik Bangun Ruang", icon: "fa-cube", time: 300,
+    qs: [
+      { q: "Sebuah balok memiliki banyaknya rusuk, sisi, dan titik sudut berturut-turut adalah ...", opts: ["12, 6, 8", "8, 6, 12", "12, 8, 6", "6, 12, 8"], a: 0, exp: ["Balok memiliki 6 bidang sisi berbentuk persegi panjang.", "Memiliki 12 rusuk (4p, 4l, 4t).", "Memiliki 8 titik sudut."] },
+      { q: "Banyak rusuk pada prisma segitiga adalah ...", opts: ["6", "9", "12", "8"], a: 1, exp: ["Prisma segitiga memiliki 2 alas segitiga (3+3 rusuk).", "Ditambah 3 rusuk tegak.", "Total rusuk = 3 + 3 + 3 = 9."] },
+      { q: "Banyak sisi pada limas segiempat adalah ...", opts: ["4", "5", "6", "8"], a: 1, exp: ["1 bidang alas segiempat.", "4 bidang sisi tegak segitiga.", "Total sisi = 1 + 4 = 5."] },
+      { q: "Bangun ruang yang memiliki 1 sisi lengkung dan tidak memiliki titik sudut maupun rusuk adalah ...", opts: ["Kerucut", "Tabung", "Bola", "Prisma"], a: 2, exp: ["Bola hanya terdiri dari 1 permukaan sisi lengkung sempurna.", "Tidak memiliki rusuk maupun titik sudut."] },
+      { q: "Bangun ruang yang memiliki 2 rusuk lengkung dan 3 bidang sisi adalah ...", opts: ["Kerucut", "Tabung", "Limas", "Bola"], a: 1, exp: ["Tabung memiliki 3 sisi (alas, tutup, selimut).", "Memiliki 2 rusuk berbentuk lingkaran (atas dan bawah)."] },
+      { q: "Banyak titik sudut pada limas segitiga adalah ...", opts: ["3", "4", "5", "6"], a: 1, exp: ["3 titik sudut pada alas segitiga.", "1 titik puncak di atas.", "Total titik sudut = 3 + 1 = 4."] },
+      { q: "Jumlah diagonal ruang pada sebuah kubus adalah ...", opts: ["4", "6", "8", "12"], a: 0, exp: ["Kubus memiliki 4 diagonal ruang yang menghubungkan titik sudut berhadapan memotong pusat kubus."] },
+      { q: "Sisi-sisi pada kubus berbentuk ...", opts: ["Persegi Panjang", "Persegi Kongruen", "Segitiga Sama Sisi", "Jajargenjang"], a: 1, exp: ["Seluruh 6 sisi kubus berbentuk persegi yang persis kongruen."] },
+      { q: "Banyak bidang diagonal pada bangun kubus adalah ...", opts: ["4", "6", "8", "12"], a: 1, exp: ["Kubus memiliki 6 bidang diagonal berbentuk persegi panjang."] },
+      { q: "Jumlah rusuk pada limas segienam adalah ...", opts: ["6", "12", "18", "10"], a: 1, exp: ["Rusuk alas segienam = 6.", "Rusuk tegak ke puncak = 6.", "Total rusuk = 6 + 6 = 12."] }
+    ]
+  },
+  {
+    id: 2, title: "Jaring-Jaring Bangun Ruang", icon: "fa-box-open", time: 300,
+    qs: [
+      { q: "Jika sebuah kubus dibuka berdasarkan rusuk-rusuknya, maka jaring-jaringnya terdiri dari ... persegi.", opts: ["4", "5", "6", "8"], a: 2, exp: ["Setiap kubus utuh terdiri dari 6 sisi persegi kongruen."] },
+      { q: "Jaring-jaring tabung terdiri dari ...", opts: ["2 lingkaran dan 1 persegi panjang", "1 lingkaran dan 1 segitiga", "2 lingkaran dan 1 juring", "2 segitiga dan 1 persegi"], a: 0, exp: ["Tabung terdiri dari alas & tutup berupa lingkaran dan selimut berupa persegi panjang."] },
+      { q: "Jaring-jaring kerucut terdiri dari ...", opts: ["1 lingkaran dan 1 juring lingkaran", "2 lingkaran dan 1 persegi", "1 lingkaran dan 1 segitiga", "2 juring lingkaran"], a: 0, exp: ["Alas kerucut berupa 1 lingkaran dan selimutnya berupa 1 juring lingkaran."] },
+      { q: "Pada jaring-jaring kubus, jika nomor 1 adalah alas, maka nomor yang menjadi tutup berhadapan adalah nomor yang ...", opts: ["Berjarak 1 kotak melompati sisi samping", "Berdampingan langsung", "Di samping kiri", "Di luar pola"], a: 0, exp: ["Sisi yang saling berhadapan pada jaring-jaring terpisah oleh satu persegi selang-seling."] },
+      { q: "Jaring-jaring prisma segitiga terdiri dari ...", opts: ["2 segitiga dan 3 persegi panjang", "3 segitiga dan 2 persegi panjang", "2 segitiga dan 2 persegi panjang", "3 segitiga dan 3 persegi panjang"], a: 0, exp: ["Alas dan tutup berupa 2 segitiga, serta 3 sisi tegak persegi panjang."] },
+      { q: "Jaring-jaring limas segitiga terdiri dari ... bidang segitiga.", opts: ["3", "4", "5", "6"], a: 1, exp: ["1 segitiga alas + 3 segitiga sisi tegak = 4 segitiga."] },
+      { q: "Manakah bangun ruang yang TIDAK bisa dibentuk jaring-jaring datar 2D sempurna?", opts: ["Kubus", "Balok", "Kerucut", "Bola"], a: 3, exp: ["Bola memiliki kelengkungan ganda (double-curved surface) sehingga tidak bisa dibentangkan datar tanpa robek/meregang."] },
+      { q: "Selimut tabung jika dibuka dan direntangkan akan berbentuk ...", opts: ["Persegi Panjang", "Lingkaran", "Juring Lingkaran", "Trapesium"], a: 0, exp: ["Keliling lingkaran alas menjadi panjang persegi panjang dan tinggi tabung menjadi lebarnya."] },
+      { q: "Pada jaring-jaring limas segiempat, terdapat ... buah segitiga.", opts: ["2", "3", "4", "5"], a: 2, exp: ["Terdapat 4 sisi tegak berbentuk segitiga melingkungi alas segiempat."] },
+      { q: "Panjang busur pada juring selimut kerucut sama dengan ...", opts: ["Tinggi Kerucut", "Garis Pelukis", "Keliling Lingkaran Alas", "Luas Alas"], a: 2, exp: ["Busur juring selimut membungkus tepat sekeliling lingkaran alas kerucut."] }
+    ]
+  },
+  {
+    id: 3, title: "Luas Permukaan Sisi Datar", icon: "fa-vector-square", time: 360,
+    qs: [
+      { q: "Sebuah kubus memiliki panjang rusuk 8 cm. Luas permukaan kubus tersebut adalah ... cm².", opts: ["384", "256", "512", "192"], a: 0, exp: ["L = 6 × s²", "L = 6 × (8)² = 6 × 64 = 384 cm²."] },
+      { q: "Luas permukaan balok berukuran 10 cm × 6 cm × 4 cm adalah ... cm².", opts: ["248", "124", "240", "288"], a: 0, exp: ["L = 2 × (pl + pt + lt)", "L = 2 × (10×6 + 10×4 + 6×4) = 2 × (60 + 40 + 24) = 2 × 124 = 248 cm²."] },
+      { q: "Sebuah prisma segitiga siku-siku memiliki alas 6 cm, tinggi alas 8 cm, dan tinggi prisma 12 cm. Luas permukaannya adalah ... cm².", opts: ["336", "288", "384", "240"], a: 0, exp: ["Sisi miring alas = √(6² + 8²) = 10 cm.", "L.Alas = 1/2 × 6 × 8 = 24 cm².", "K.Alas = 6 + 8 + 10 = 24 cm.", "L = 2(24) + (24 × 12) = 48 + 288 = 336 cm²."] },
+      { q: "Limas segiempat beraturan memiliki sisi alas 10 cm dan tinggi segitiga tegak 12 cm. Luas permukaan limas adalah ... cm².", opts: ["340", "240", "290", "390"], a: 0, exp: ["L.Alas = 10 × 10 = 100 cm².", "4 × L.Segitiga = 4 × (1/2 × 10 × 12) = 240 cm².", "L.Total = 100 + 240 = 340 cm²."] },
+      { q: "Jika luas permukaan sebuah kubus adalah 150 cm², maka panjang rusuk kubus adalah ... cm.", opts: ["5", "6", "25", "10"], a: 0, exp: ["6s² = 150 => s² = 25 => s = 5 cm."] },
+      { q: "Suatu kubus tanpa tutup memiliki rusuk 6 cm. Luas permukaan kubus tanpa tutup tersebut adalah ... cm².", opts: ["180", "216", "144", "150"], a: 0, exp: ["Karena tanpa tutup, jumlah sisi = 5.", "L = 5 × 6² = 5 × 36 = 180 cm²."] },
+      { q: "Balok berukuran 8 cm × 5 cm × 2 cm. Luas alas balok tersebut adalah ... cm².", opts: ["40", "16", "10", "80"], a: 0, exp: ["Luas alas = p × l = 8 × 5 = 40 cm²."] },
+      { q: "Sisi alas limas berbentuk persegi dengan keliling 48 cm. Panjang sisi alas limas adalah ... cm.", opts: ["12", "24", "16", "8"], a: 0, exp: ["s = Keliling / 4 = 48 / 4 = 12 cm."] },
+      { q: "Luas permukaan balok adalah 198 cm². Jika p = 9 cm dan l = 6 cm, maka tinggi balok adalah ... cm.", opts: ["3", "4", "5", "2"], a: 0, exp: ["2(pl + pt + lt) = 198 => pl + pt + lt = 99", "54 + 9t + 6t = 99 => 15t = 45 => t = 3 cm."] },
+      { q: "Dua kubus identik dengan rusuk 4 cm didempetkan satu sisinya. Luas permukaan bangun gabungan tersebut adalah ... cm².", opts: ["160", "192", "128", "144"], a: 0, exp: ["Total sisi 2 kubus = 12 sisi.", "2 sisi saling tertutup dempetan, tersisa 10 sisi luar.", "L = 10 × (4)² = 160 cm²."] }
+    ]
+  },
+  {
+    id: 4, title: "Volume Sisi Datar", icon: "fa-cubes", time: 360,
+    qs: Array.from({ length: 10 }, (_, k) => ({
+      q: `[Level 4 Soal ${k+1}] Sebuah wadah berbentuk kubus dengan rusuk ${(k+3)} cm. Berapakah volume udara yang dapat ditampung dalam wadah tersebut?`,
+      opts: [`${(k+3)**3} cm³`, `${(k+3)**2 * 6} cm³`, `${(k+3)*12} cm³`, `${(k+3)**3 + 10} cm³`],
+      a: 0,
+      exp: [`Rumus Volume Kubus = s³`, `V = ${(k+3)}³ = ${(k+3)**3} cm³.`]
+    }))
+  },
+  {
+    id: 5, title: "Bangun Ruang Sisi Lengkung", icon: "fa-database", time: 600,
+    qs: [
+      { q: "Sebuah tabung berjari-jari 7 cm dan tinggi 10 cm. Dengan π = 22/7, volume tabung tersebut adalah ... cm³.", opts: ["440", "1.540", "154", "3.080"], a: 1, exp: ["V = π × r² × t", "V = 22/7 × 7 × 7 × 10 = 1.540 cm³."] },
+      { q: "Kerucut berjari-jari 6 cm dan tinggi 8 cm. Luas permukaan kerucut adalah ... cm² (π = 3,14).", opts: ["188,4", "301,44", "226,08", "452,16"], a: 1, exp: ["s = √(6² + 8²) = 10 cm.", "L = πr(r + s) = 3,14 × 6 × (6 + 10) = 301,44 cm²."] },
+      { q: "Sebuah bola berdiameter 42 cm. Dengan π = 22/7, volume bola adalah ... cm³.", opts: ["38.808", "5.544", "19.404", "27.720"], a: 0, exp: ["r = 21 cm.", "V = 4/3 × 22/7 × 21³ = 38.808 cm³."] },
+      ...Array.from({ length: 7 }, (_, k) => ({
+        q: `[Level 5 Soal ${k+4}] Tabung dengan r = ${(k+2)*7} cm dan t = 10 cm. Luas selimut tabung adalah ... cm² (π = 22/7).`,
+        opts: [`${2 * 22/7 * (k+2)*7 * 10} cm²`, `${22/7 * ((k+2)*7)**2} cm²`, `100 cm²`, `500 cm²`],
+        a: 0,
+        exp: [`L.Selimut = 2πrt`, `L = 2 × 22/7 × ${(k+2)*7} × 10 = ${2 * 22/7 * (k+2)*7 * 10} cm².`]
+      }))
+    ]
+  },
+  {
+    id: 6, title: "Pythagoras & Diagonal Ruang", icon: "fa-ruler-combined", time: 480,
+    qs: Array.from({ length: 10 }, (_, k) => ({
+      q: `[Level 6 Soal ${k+1}] Panjang diagonal ruang kubus dengan rusuk ${(k+2)*3} cm adalah ... cm.`,
+      opts: [`${(k+2)*3}√3`, `${(k+2)*3}√2`, `${(k+2)*6}`, `${(k+2)*3}`],
+      a: 0,
+      exp: [`Diagonal Ruang Kubus = s√3.`, `d = ${(k+2)*3}√3 cm.`]
+    }))
+  },
+  {
+    id: 7, title: "Perubahan Skala & Perbandingan", icon: "fa-up-right-and-down-left-from-center", time: 480,
+    qs: Array.from({ length: 10 }, (_, k) => ({
+      q: `[Level 7 Soal ${k+1}] Jika rusuk kubus diperbesar ${k+2} kali lipat, maka volumenya menjadi ... kali lipat semula.`,
+      opts: [`${(k+2)**3}`, `${(k+2)**2}`, `${(k+2)*3}`, `${(k+2)*6}`],
+      a: 0,
+      exp: [`Perbandingan Volume = (Skala)³ = (${k+2})³ = ${(k+2)**3} kali.`]
+    }))
+  },
+  {
+    id: 8, title: "HOTS - Bangun Gabungan/Komposit", icon: "fa-layer-group", time: 720,
+    qs: [
+      { q: "Tabung (r = 6 cm, t = 10 cm) di atasnya ditutup belahan bola jari-jari 6 cm. Volume gabungan adalah ... cm³ (π = 3,14).", opts: ["1.130,4", "1.582,56", "2.034,72", "1.356,48"], a: 1, exp: ["V.Tabung = 3,14 × 36 × 10 = 1.130,4 cm³.", "V.SetengahBola = 2/3 × 3,14 × 216 = 452,16 cm³.", "Total = 1.582,56 cm³."] },
+      ...Array.from({ length: 9 }, (_, k) => ({
+        q: `[Level 8 Soal ${k+2}] Kubus rusuk ${(k+2)*2} cm ditempelkan di atas balok. Luas bidang impas tertutup adalah ... cm².`,
+        opts: [`${((k+2)*2)**2}`, `${((k+2)*2)*4}`, `${((k+2)*2)**3}`, `0`],
+        a: 0,
+        exp: [`Bidang impas menempel = Luas alas kubus = s² = ${((k+2)*2)**2} cm².`]
+      }))
+    ]
+  },
+  {
+    id: 9, title: "HOTS - Soal Cerita Kontekstual", icon: "fa-book-open-reader", time: 720,
+    qs: Array.from({ length: 10 }, (_, k) => ({
+      q: `[Level 9 Soal ${k+1}] Sebuah kolam renang berbentuk balok berukuran ${(k+5)}m × 4m × 2m. Banyak air penuh yang dibutuhkan adalah ... liter (1 m³ = 1.000 liter).`,
+      opts: [`${(k+5)*4*2*1000}`, `${(k+5)*4*2}`, `${(k+5)*1000}`, `${(k+5)*4*1000}`],
+      a: 0,
+      exp: [`V = p × l × t = ${(k+5)} × 4 × 2 = ${(k+5)*4*2} m³ = ${(k+5)*4*2*1000} Liter.`]
+    }))
+  },
+  {
+    id: 10, title: "Master TKA Geometri Ruang", icon: "fa-trophy", time: 420,
+    qs: Array.from({ length: 10 }, (_, k) => ({
+      q: `[Master Level 10 Soal ${k+1}] Diberikan kerucut di dalam tabung dengan alas & tinggi sama. Perbandingan volume ruang di luar kerucut terhadap volume tabung adalah ...`,
+      opts: ["2 : 3", "1 : 3", "1 : 2", "3 : 4"],
+      a: 0,
+      exp: ["V.Kerucut = 1/3 V.Tabung.", "V.Sisa Luar = V.Tabung - 1/3 V.Tabung = 2/3 V.Tabung.", "Rasio = 2/3 : 1 = 2 : 3."]
+    }))
+  }
+];
+
+/* Quiz Engine Logic */
+const Q = { lv: null, i: 0, ok: 0, left: 0, tm: null, done: false, answered: false };
+const prog = () => { try { return JSON.parse(localStorage.getItem('vg-quiz')) || { unlocked: 1, scores: {} }; } catch (e) { return { unlocked: 1, scores: {} }; } };
+const saveProg = p => { try { localStorage.setItem('vg-quiz', JSON.stringify(p)); } catch (e) {} };
+const qb = () => document.getElementById('quizBody');
+const fmt = s => String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+const pct = () => Math.round((Q.ok / Q.lv.qs.length) * 100);
+
+function renderQuizMap() {
+  clearInterval(Q.tm); const p = prog();
+  qb().innerHTML = `
+    <div class="text-center mb-8 space-y-2">
+      <h2 class="text-3xl font-black">Latihan</h2>
+      <p class="text-xs sm:text-sm opacity-75">Selesaikan 10 level secara bertahap. Capai nilai minimal 85 untuk membakar batas level berikutnya!</p>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      ${quizLevels.map(l => {
+        const lock = l.id > p.unlocked, sc = p.scores[l.id], n = l.qs.length;
+        return `
+          <button ${lock || !n ? 'disabled' : ''} onclick="startQuiz(${l.id})" class="nova-glass-card text-left p-5 rounded-3xl flex items-center gap-4 ${lock || !n ? 'opacity-50 cursor-not-allowed' : ''}">
+            <div class="w-12 h-12 rounded-2xl bg-[#4A7FA7]/20 text-[#4A7FA7] dark:text-[#B3CFE5] flex items-center justify-center text-xl shrink-0">
+              <i class="fa-solid ${lock ? 'fa-lock' : l.icon}"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="text-[10px] opacity-75 font-bold uppercase tracking-wider">LEVEL ${l.id}</div>
+              <div class="text-sm font-black truncate">${l.title}</div>
+              <div class="text-[11px] opacity-75 mt-0.5">${n} Soal · ${fmt(l.time)} ${sc != null ? `· Skor: <b class="text-[#4A7FA7] dark:text-[#B3CFE5]">${sc}</b>` : ''}</div>
+            </div>
+            ${sc >= 85 ? '<i class="fa-solid fa-circle-check text-emerald-500 text-lg"></i>' : ''}
+          </button>`;
+      }).join('')}
+    </div>
+    <div class="text-center mt-8">
+      <button onclick="if(confirm('Reset semua rekam skor latihan?')){localStorage.removeItem('vg-quiz');renderQuizMap();}" class="text-xs opacity-60 hover:opacity-100 underline">Reset Progres Latihan</button>
+    </div>`;
+}
+
+function startQuiz(id) {
+  const l = quizLevels[id - 1]; Object.assign(Q, { lv: l, i: 0, ok: 0, left: l.time, done: false });
+  clearInterval(Q.tm);
+  Q.tm = setInterval(() => {
+    if (--Q.left <= 0) return finishQuiz();
+    const e = document.getElementById('qTimer'); if (e) { e.textContent = fmt(Q.left); e.classList.toggle('text-rose-500', Q.left < 30); }
+  }, 1000);
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const l = Q.lv, q = l.qs[Q.i], n = l.qs.length; Q.answered = false;
+  qb().innerHTML = `
+    <div class="nova-glass-panel rounded-3xl p-6 sm:p-8 space-y-6">
+      <div class="flex items-center justify-between text-xs font-bold">
+        <span class="text-[#4A7FA7] dark:text-[#B3CFE5]">Level ${l.id} · ${l.title}</span>
+        <span class="flex items-center gap-4">
+          <span><i class="fa-solid fa-star text-amber-400 mr-1"></i> <span id="qSc">${pct()}</span>%</span>
+          <span class="font-mono"><i class="fa-regular fa-clock mr-1"></i><span id="qTimer">${fmt(Q.left)}</span></span>
+        </span>
+      </div>
+
+      <div class="h-2 rounded-full bg-slate-500/20 overflow-hidden">
+        <div class="h-full bg-gradient-to-r from-[#4A7FA7] to-[#B3CFE5] transition-all duration-300" style="width:${(Q.i / n) * 100}%"></div>
+      </div>
+
+      <div class="space-y-2">
+        <span class="text-[11px] opacity-70 font-bold">Soal ${Q.i + 1} dari ${n}</span>
+        <h3 class="text-base sm:text-lg font-extrabold leading-relaxed">${q.q}</h3>
+      </div>
+
+      <div class="space-y-3">
+        ${q.opts.map((o, k) => `
+          <button onclick="answerQ(${k})" class="qopt nova-glass-card w-full text-left px-5 py-3.5 rounded-2xl text-xs sm:text-sm font-semibold flex items-center gap-3">
+            <span class="w-6 h-6 rounded-xl bg-[#4A7FA7]/20 flex items-center justify-center text-[#4A7FA7] dark:text-[#B3CFE5] font-bold text-xs">${'ABCD'[k]}</span>
+            <span>${o}</span>
+          </button>
+        `).join('')}
+      </div>
+
+      <div id="qFb"></div>
+    </div>`;
+}
+
+function answerQ(k) {
+  if (Q.answered || Q.done) return; Q.answered = true;
+  const q = Q.lv.qs[Q.i], ok = k === q.a, last = Q.i === Q.lv.qs.length - 1; if (ok) Q.ok++;
+  
+  document.querySelectorAll('.qopt').forEach((b, j) => {
+    b.disabled = true;
+    // Hijau (qok) HANYA jika jawaban pengguna BENAR
+    b.classList.toggle('qok', j === k && ok);
+    // Merah (qbad) jika jawaban pengguna SALAH
+    b.classList.toggle('qbad', j === k && !ok);
+  });
+
+  document.getElementById('qSc').textContent = pct();
+
+  // Pembahasan step-by-step hanya jika jawaban BENAR
+  const expHtml = ok ? `
+      <div class="space-y-1">
+        <h4 class="text-[11px] font-extrabold uppercase text-[#4A7FA7] dark:text-[#B3CFE5]">Pembahasan Step-by-Step:</h4>
+        <ul class="text-xs opacity-90 space-y-1 list-disc list-inside">
+          ${q.exp.map(x => `<li>${x}</li>`).join('')}
+        </ul>
+      </div>` : '';
+
+  document.getElementById('qFb').innerHTML = `
+    <div class="mt-4 p-5 rounded-2xl border ${ok ? 'border-emerald-500/40 bg-emerald-500/10' : 'border-rose-500/40 bg-rose-500/10'} space-y-3">
+      <p class="text-sm font-bold ${ok ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} flex items-center gap-2">
+        <i class="fa-solid ${ok ? 'fa-circle-check' : 'fa-circle-xmark'} text-lg"></i>
+        ${ok ? 'Jawaban Kamu Tepat!' : 'Jawaban Belum Tepat'}
+      </p>
+      ${expHtml}
+    </div>
+    <button onclick="${last ? 'finishQuiz()' : 'Q.i++;renderQuestion()'}" class="mt-4 w-full py-3 rounded-2xl nova-btn-accent text-xs font-bold shadow-lg flex items-center justify-center gap-2">
+      <span>${last ? 'Lihat Hasil Akhir' : 'Lanjut Soal Berikutnya'}</span>
+      <i class="fa-solid fa-arrow-right"></i>
+    </button>`;
+}
+
+function finishQuiz() {
+  if (Q.done) return; Q.done = true; clearInterval(Q.tm);
+  const l = Q.lv, sc = pct(), pass = sc >= 70, p = prog(), nx = quizLevels[l.id], timeout = Q.left <= 0;
+  p.scores[l.id] = Math.max(p.scores[l.id] || 0, sc);
+  if (pass && nx) p.unlocked = Math.max(p.unlocked, l.id + 1);
+  saveProg(p);
+
+  qb().innerHTML = `
+    <div class="nova-glass-panel rounded-3xl p-8 text-center space-y-6">
+      <div class="w-20 h-20 mx-auto rounded-full flex items-center justify-center text-3xl ${pass ? 'bg-emerald-500/20 text-emerald-500' : 'bg-rose-500/20 text-rose-500'}">
+        <i class="fa-solid ${pass ? 'fa-trophy' : 'fa-rotate-left'}"></i>
+      </div>
+      <div class="space-y-1">
+        <h2 class="text-2xl font-black">${timeout ? 'Waktu Habis! ' : ''}${pass ? 'Selamat! Level ' + l.id + ' Tuntas' : 'Belum Memenuhi Syarat Kelulusan'}</h2>
+        <p class="text-xs opacity-75">Nilai minimal kelulusan adalah 85</p>
+      </div>
+      
+      <div class="text-5xl font-black text-[#4A7FA7] dark:text-[#B3CFE5]">${sc}</div>
+      <p class="text-xs opacity-80">${Q.ok} dari ${l.qs.length} soal dijawab dengan benar.</p>
+
+      <div class="flex flex-wrap justify-center gap-3 pt-2">
+        <button onclick="startQuiz(${l.id})" class="px-5 py-2.5 rounded-2xl nova-glass-card text-xs font-bold">
+          <i class="fa-solid fa-rotate-right mr-1"></i> Coba Lagi
+        </button>
+        ${pass && nx && nx.qs.length ? `
+          <button onclick="startQuiz(${nx.id})" class="px-5 py-2.5 rounded-2xl nova-btn-accent text-xs font-bold">
+            Lanjut Level ${nx.id} <i class="fa-solid fa-arrow-right ml-1"></i>
+          </button>` : ''}
+        <button onclick="renderQuizMap()" class="px-5 py-2.5 rounded-2xl nova-glass-card text-xs font-bold">
+          <i class="fa-solid fa-map mr-1"></i> Peta Level
+        </button>
+      </div>
+    </div>`;
+}
+
+/* On Window Ready Initialization */
+window.onload = () => {
+  try {
+    const savedTheme = localStorage.getItem('vg-theme');
+    if (savedTheme) document.documentElement.classList.toggle('dark', savedTheme === 'dark');
+  } catch (e) {}
+  syncThemeIcon();
+  switchTab('tabPengertian');
+  navigateTo('hero');
+};
+</script>
+</body>
+</html>
