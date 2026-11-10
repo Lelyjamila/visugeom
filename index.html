@@ -84,7 +84,6 @@
         radial-gradient(circle at 90% 85%, rgba(179, 207, 229, 0.15), transparent 45%);
     }
 
-    /* Glassmorphism Containers */
     .nova-glass-panel {
       background: var(--glass-panel);
       backdrop-filter: blur(20px);
@@ -108,7 +107,6 @@
       box-shadow: 0 16px 36px 0 rgba(74, 127, 167, 0.25);
     }
 
-    /* Primary Accent Button */
     .nova-btn-accent {
       background: var(--accent-gradient);
       color: var(--btn-text);
@@ -122,7 +120,6 @@
       transform: translateY(-1px);
     }
 
-    /* Utility Controls */
     .cbtn {
       padding: 0.6rem;
       border-radius: 0.75rem;
@@ -156,25 +153,19 @@
                         linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
     }
 
-    .qopt {
-      transition: all 0.2s ease;
-    }
+    .qopt { transition: all 0.2s ease; }
     .qopt.qok {
       background: rgba(34, 197, 94, 0.25) !important;
       border-color: #22c55e !important;
       color: #15803d !important;
     }
-    .dark .qopt.qok {
-      color: #4ade80 !important;
-    }
+    .dark .qopt.qok { color: #4ade80 !important; }
     .qopt.qbad {
       background: rgba(239, 68, 68, 0.25) !important;
       border-color: #ef4444 !important;
       color: #b91c1c !important;
     }
-    .dark .qopt.qbad {
-      color: #f87171 !important;
-    }
+    .dark .qopt.qbad { color: #f87171 !important; }
 
     ::-webkit-scrollbar { width: 8px; height: 8px; }
     ::-webkit-scrollbar-track { background: var(--bg-main); }
@@ -199,6 +190,12 @@
     </div>
 
     <div class="flex items-center space-x-3">
+      <!-- Status Premium Badge -->
+      <button id="btnUpgradePro" onclick="openLicenseModal()" class="px-3 py-1.5 rounded-xl bg-amber-500/20 text-amber-500 border border-amber-500/40 text-xs font-bold flex items-center gap-1.5 hover:bg-amber-500/30 transition">
+        <i class="fa-solid fa-crown text-amber-400"></i>
+        <span id="proStatusText">Upgrade PRO</span>
+      </button>
+
       <button id="btnBackToCatalog" onclick="navigateTo('catalog')" class="hidden px-4 py-2 rounded-2xl nova-glass-card text-xs font-semibold items-center gap-2">
         <i class="fa-solid fa-arrow-left"></i> Katalog
       </button>
@@ -424,7 +421,98 @@
 
 </main>
 
+<!-- MODAL PEMBELIAN / AKTIVASI LISENSI PRO (ENTREPRENEURSHIP) -->
+<div id="modalLicense" class="fixed inset-0 z-[2000] hidden items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md">
+  <div class="nova-glass-panel max-w-md w-full p-6 sm:p-8 rounded-3xl space-y-6 relative border border-amber-500/30">
+    <button onclick="closeLicenseModal()" class="absolute top-4 right-4 text-xs p-2 opacity-70 hover:opacity-100">
+      <i class="fa-solid fa-xmark text-lg"></i>
+    </button>
+    
+    <div class="text-center space-y-2">
+      <div class="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-500 flex items-center justify-center mx-auto text-2xl">
+        <i class="fa-solid fa-crown"></i>
+      </div>
+      <h3 class="text-xl font-black">Fitur VisuGeom PRO</h3>
+      <p class="text-xs opacity-80 leading-relaxed">Dapatkan akses ke fitur simulasi tingkat lanjut: Irisan Penampang 3D, Simulasi Isi Air Real-time, dan Visualisasi Diagonal Ruang.</p>
+    </div>
+
+    <!-- Pricing Option Card -->
+    <div class="nova-glass-card p-4 rounded-2xl border border-amber-500/40 bg-amber-500/5 space-y-2">
+      <div class="flex justify-between items-center">
+        <span class="text-xs font-bold">Lisensi Siswa / Guru (Lifetime)</span>
+        <span class="text-sm font-black text-amber-500">Rp 15.000</span>
+      </div>
+      <p class="text-[11px] opacity-75">Buka seluruh fitur visualisasi interaktif tanpa batas waktu.</p>
+    </div>
+
+    <!-- Input Kode Aktivasi -->
+    <div class="space-y-2">
+      <label class="text-xs font-bold opacity-80">Punya Kode Lisensi Aktivasi?</label>
+      <div class="flex gap-2">
+        <input type="text" id="inputLicenseCode" placeholder="Masukkan kode di sini..." class="flex-1 px-4 py-2.5 rounded-xl nova-glass-card text-xs font-mono border border-slate-500/30 outline-none uppercase">
+        <button onclick="activateLicense()" class="px-4 py-2.5 rounded-xl nova-btn-accent text-xs font-bold shrink-0">Aktivasi</button>
+      </div>
+      <p id="licenseErr" class="text-[11px] font-bold text-rose-500 min-h-[1rem]"></p>
+    </div>
+
+    <div class="p-3 rounded-xl bg-slate-500/10 text-[11px] opacity-75 space-y-1">
+      <p>💡 <b>Kode Demo Pengujian:</b></p>
+      <p class="font-mono text-amber-500">VISUGEOM-PRO-2026 <span class="opacity-70">atau</span> ENTREPRENEUR</p>
+    </div>
+  </div>
+</div>
+
 <script>
+/* ==========================================
+   SISTEM LISENSI PREMIUM (LOCALSTORAGE)
+   ========================================== */
+const PRO_KEYS = ['VISUGEOM-PRO-2026', 'ENTREPRENEUR', 'PRO123'];
+function isProUnlocked() {
+  try { return localStorage.getItem('vg-pro-unlocked') === 'true'; } catch(e) { return false; }
+}
+
+function updateProUI() {
+  const pro = isProUnlocked();
+  const txt = document.getElementById('proStatusText');
+  const btn = document.getElementById('btnUpgradePro');
+  if (pro) {
+    txt.innerText = "PRO Active";
+    btn.className = "px-3 py-1.5 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-xs font-bold flex items-center gap-1.5";
+  } else {
+    txt.innerText = "Upgrade PRO";
+    btn.className = "px-3 py-1.5 rounded-xl bg-amber-500/20 text-amber-500 border border-amber-500/40 text-xs font-bold flex items-center gap-1.5 hover:bg-amber-500/30 transition";
+  }
+}
+
+function openLicenseModal() {
+  document.getElementById('modalLicense').classList.remove('hidden');
+  document.getElementById('modalLicense').classList.add('flex');
+}
+
+function closeLicenseModal() {
+  document.getElementById('modalLicense').classList.add('hidden');
+  document.getElementById('modalLicense').classList.remove('flex');
+}
+
+function activateLicense() {
+  const input = document.getElementById('inputLicenseCode').value.trim().toUpperCase();
+  const err = document.getElementById('licenseErr');
+  if (PRO_KEYS.includes(input)) {
+    try { localStorage.setItem('vg-pro-unlocked', 'true'); } catch(e){}
+    err.className = "text-[11px] font-bold text-emerald-500";
+    err.innerText = "Aktivasi Berhasil! Fitur PRO unlocked.";
+    updateProUI();
+    setTimeout(() => {
+      closeLicenseModal();
+      err.innerText = "";
+      if(typeof simSyncUI === 'function') simSyncUI();
+    }, 1200);
+  } else {
+    err.className = "text-[11px] font-bold text-rose-500";
+    err.innerText = "Kode lisensi tidak valid. Gunakan kode demo yang tertera.";
+  }
+}
+
 /* ==========================================
    1. DATA GEOMETRI & RUMUS
    ========================================== */
@@ -665,7 +753,6 @@ function navigateTo(target) {
 
 function openShapeDetail(k) { navigateTo('detail'); changeShape(k); }
 
-/* Init Three.js WebGL Engine */
 function initThreeEngine() {
   const c = document.getElementById('threeCanvas');
   scene = new THREE.Scene();
@@ -746,7 +833,6 @@ function buildShape3D(key) {
   updateNetsUnfold(netFoldFactor);
 }
 
-/* 3D Geometry Net Generators */
 function makeFace(w, h, mat, rx = 0, ry = 0, rz = 0) {
   const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat.clone());
   m.rotation.set(rx, ry, rz);
@@ -855,7 +941,6 @@ function createSphere(g, mat) {
   g.add(m); g.userData.hinges = []; g.userData.noNet = true;
 }
 
-/* Unfolding Logic */
 function updateNetsUnfold(val) {
   val = Math.max(0, Math.min(100, Number(val) || 0)); netFoldFactor = val;
   document.getElementById('unfoldPercent').innerText = val + '%';
@@ -942,10 +1027,14 @@ function calculateResult(pv) {
 }
 
 function switchTab(id) {
-  const map = { tabPengertian: 'tabBtnPengertian', tabRumus: 'tabBtnRumus', tabJaring: 'tabBtnJaring' };
+  const map = { tabPengertian: 'tabBtnPengertian', tabRumus: 'tabBtnRumus', tabJaring: 'tabBtnJaring', tabSim: 'tabBtnSim' };
   Object.keys(map).forEach(k => {
-    document.getElementById(k).classList.toggle('hidden', k !== id);
-    document.getElementById(map[k]).className = 'flex-1 py-2 text-xs font-bold rounded-xl transition ' + (k === id ? 'nova-btn-accent shadow-sm' : 'opacity-70 hover:opacity-100');
+    if (document.getElementById(k)) {
+      document.getElementById(k).classList.toggle('hidden', k !== id);
+      if (document.getElementById(map[k])) {
+        document.getElementById(map[k]).className = 'flex-1 py-2 text-xs font-bold rounded-xl transition ' + (k === id ? 'nova-btn-accent shadow-sm' : 'opacity-70 hover:opacity-100');
+      }
+    }
   });
 }
 
@@ -968,7 +1057,6 @@ function toggleFullscreen() {
   else document.exitFullscreen();
 }
 
-/* Text-to-Speech */
 function toggleSpeech() {
   if (!synth) { alert('Browser tidak mendukung Text-to-Speech.'); return; }
   if (synth.speaking) { synth.cancel(); setTTSState(false); return; }
@@ -983,7 +1071,6 @@ function setTTSState(on) {
   document.getElementById('ttsText').innerText = on ? 'Hentikan' : 'Baca Suara';
 }
 
-/* Theme Switching & WebGL Dynamic Lighting */
 const isDark = () => document.documentElement.classList.contains('dark');
 function applyThemeScene() {
   if (!scene) return;
@@ -1001,7 +1088,7 @@ function toggleTheme() {
 }
 
 /* ==========================================
-   5. TKA GEOMETRI QUIZ MODULE (10 LEVELS x 10 SOAL)
+   5. TKA GEOMETRI QUIZ MODULE (10 LEVELS)
    ========================================== */
 const quizLevels = [
   {
@@ -1052,7 +1139,7 @@ const quizLevels = [
   {
     id: 4, title: "Volume Sisi Datar", icon: "fa-cubes", time: 360,
     qs: Array.from({ length: 10 }, (_, k) => ({
-      q: `[Level 4 Soal ${k+1}] Sebuah wadah berbentuk kubus dengan rusuk ${(k+3)} cm. Berapakah volume udara yang dapat ditampung dalam wadah tersebut?`,
+      q: `Sebuah wadah berbentuk kubus dengan rusuk ${(k+3)} cm. Berapakah volume udara yang dapat ditampung dalam wadah tersebut?`,
       opts: [`${(k+3)**3} cm³`, `${(k+3)**2 * 6} cm³`, `${(k+3)*12} cm³`, `${(k+3)**3 + 10} cm³`],
       a: 0,
       exp: [`Rumus Volume Kubus = s³`, `V = ${(k+3)}³ = ${(k+3)**3} cm³.`]
@@ -1065,7 +1152,7 @@ const quizLevels = [
       { q: "Kerucut berjari-jari 6 cm dan tinggi 8 cm. Luas permukaan kerucut adalah ... cm² (π = 3,14).", opts: ["188,4", "301,44", "226,08", "452,16"], a: 1, exp: ["s = √(6² + 8²) = 10 cm.", "L = πr(r + s) = 3,14 × 6 × (6 + 10) = 301,44 cm²."] },
       { q: "Sebuah bola berdiameter 42 cm. Dengan π = 22/7, volume bola adalah ... cm³.", opts: ["38.808", "5.544", "19.404", "27.720"], a: 0, exp: ["r = 21 cm.", "V = 4/3 × 22/7 × 21³ = 38.808 cm³."] },
       ...Array.from({ length: 7 }, (_, k) => ({
-        q: `[Level 5 Soal ${k+4}] Tabung dengan r = ${(k+2)*7} cm dan t = 10 cm. Luas selimut tabung adalah ... cm² (π = 22/7).`,
+        q: `Tabung dengan r = ${(k+2)*7} cm dan t = 10 cm. Luas selimut tabung adalah ... cm² (π = 22/7).`,
         opts: [`${2 * 22/7 * (k+2)*7 * 10} cm²`, `${22/7 * ((k+2)*7)**2} cm²`, `100 cm²`, `500 cm²`],
         a: 0,
         exp: [`L.Selimut = 2πrt`, `L = 2 × 22/7 × ${(k+2)*7} × 10 = ${2 * 22/7 * (k+2)*7 * 10} cm².`]
@@ -1075,7 +1162,7 @@ const quizLevels = [
   {
     id: 6, title: "Pythagoras & Diagonal Ruang", icon: "fa-ruler-combined", time: 480,
     qs: Array.from({ length: 10 }, (_, k) => ({
-      q: `[Level 6 Soal ${k+1}] Panjang diagonal ruang kubus dengan rusuk ${(k+2)*3} cm adalah ... cm.`,
+      q: `Panjang diagonal ruang kubus dengan rusuk ${(k+2)*3} cm adalah ... cm.`,
       opts: [`${(k+2)*3}√3`, `${(k+2)*3}√2`, `${(k+2)*6}`, `${(k+2)*3}`],
       a: 0,
       exp: [`Diagonal Ruang Kubus = s√3.`, `d = ${(k+2)*3}√3 cm.`]
@@ -1084,7 +1171,7 @@ const quizLevels = [
   {
     id: 7, title: "Perubahan Skala & Perbandingan", icon: "fa-up-right-and-down-left-from-center", time: 480,
     qs: Array.from({ length: 10 }, (_, k) => ({
-      q: `[Level 7 Soal ${k+1}] Jika rusuk kubus diperbesar ${k+2} kali lipat, maka volumenya menjadi ... kali lipat semula.`,
+      q: `Jika rusuk kubus diperbesar ${k+2} kali lipat, maka volumenya menjadi ... kali lipat semula.`,
       opts: [`${(k+2)**3}`, `${(k+2)**2}`, `${(k+2)*3}`, `${(k+2)*6}`],
       a: 0,
       exp: [`Perbandingan Volume = (Skala)³ = (${k+2})³ = ${(k+2)**3} kali.`]
@@ -1095,7 +1182,7 @@ const quizLevels = [
     qs: [
       { q: "Tabung (r = 6 cm, t = 10 cm) di atasnya ditutup belahan bola jari-jari 6 cm. Volume gabungan adalah ... cm³ (π = 3,14).", opts: ["1.130,4", "1.582,56", "2.034,72", "1.356,48"], a: 1, exp: ["V.Tabung = 3,14 × 36 × 10 = 1.130,4 cm³.", "V.SetengahBola = 2/3 × 3,14 × 216 = 452,16 cm³.", "Total = 1.582,56 cm³."] },
       ...Array.from({ length: 9 }, (_, k) => ({
-        q: `[Level 8 Soal ${k+2}] Kubus rusuk ${(k+2)*2} cm ditempelkan di atas balok. Luas bidang impas tertutup adalah ... cm².`,
+        q: `Kubus rusuk ${(k+2)*2} cm ditempelkan di atas balok. Luas bidang impas tertutup adalah ... cm².`,
         opts: [`${((k+2)*2)**2}`, `${((k+2)*2)*4}`, `${((k+2)*2)**3}`, `0`],
         a: 0,
         exp: [`Bidang impas menempel = Luas alas kubus = s² = ${((k+2)*2)**2} cm².`]
@@ -1105,7 +1192,7 @@ const quizLevels = [
   {
     id: 9, title: "HOTS - Soal Cerita Kontekstual", icon: "fa-book-open-reader", time: 720,
     qs: Array.from({ length: 10 }, (_, k) => ({
-      q: `[Level 9 Soal ${k+1}] Sebuah kolam renang berbentuk balok berukuran ${(k+5)}m × 4m × 2m. Banyak air penuh yang dibutuhkan adalah ... liter (1 m³ = 1.000 liter).`,
+      q: `Sebuah kolam renang berbentuk balok berukuran ${(k+5)}m × 4m × 2m. Banyak air penuh yang dibutuhkan adalah ... liter (1 m³ = 1.000 liter).`,
       opts: [`${(k+5)*4*2*1000}`, `${(k+5)*4*2}`, `${(k+5)*1000}`, `${(k+5)*4*1000}`],
       a: 0,
       exp: [`V = p × l × t = ${(k+5)} × 4 × 2 = ${(k+5)*4*2} m³ = ${(k+5)*4*2*1000} Liter.`]
@@ -1114,7 +1201,7 @@ const quizLevels = [
   {
     id: 10, title: "Master TKA Geometri Ruang", icon: "fa-trophy", time: 420,
     qs: Array.from({ length: 10 }, (_, k) => ({
-      q: `[Master Level 10 Soal ${k+1}] Diberikan kerucut di dalam tabung dengan alas & tinggi sama. Perbandingan volume ruang di luar kerucut terhadap volume tabung adalah ...`,
+      q: `Diberikan kerucut di dalam tabung dengan alas & tinggi sama. Perbandingan volume ruang di luar kerucut terhadap volume tabung adalah ...`,
       opts: ["2 : 3", "1 : 3", "1 : 2", "3 : 4"],
       a: 0,
       exp: ["V.Kerucut = 1/3 V.Tabung.", "V.Sisa Luar = V.Tabung - 1/3 V.Tabung = 2/3 V.Tabung.", "Rasio = 2/3 : 1 = 2 : 3."]
@@ -1122,7 +1209,6 @@ const quizLevels = [
   }
 ];
 
-/* Quiz Engine Logic */
 const Q = { lv: null, i: 0, ok: 0, left: 0, tm: null, done: false, answered: false };
 const prog = () => { try { return JSON.parse(localStorage.getItem('vg-quiz')) || { unlocked: 1, scores: {} }; } catch (e) { return { unlocked: 1, scores: {} }; } };
 const saveProg = p => { try { localStorage.setItem('vg-quiz', JSON.stringify(p)); } catch (e) {} };
@@ -1135,15 +1221,15 @@ function renderQuizMap() {
   qb().innerHTML = `
     <div class="text-center mb-8 space-y-2">
       <h2 class="text-3xl font-black">Latihan</h2>
-      <p class="text-xs sm:text-sm opacity-75">Selesaikan 10 level secara bertahap. Capai nilai minimal 85 untuk membakar batas level berikutnya!</p>
+      <p class="text-xs sm:text-sm opacity-75">Seluruh 10 level dapat diakses secara bebas untuk menguji kemampuan geometri kamu!</p>
     </div>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
       ${quizLevels.map(l => {
-        const lock = l.id > p.unlocked, sc = p.scores[l.id], n = l.qs.length;
+        const sc = p.scores[l.id], n = l.qs.length;
         return `
-          <button ${lock || !n ? 'disabled' : ''} onclick="startQuiz(${l.id})" class="nova-glass-card text-left p-5 rounded-3xl flex items-center gap-4 ${lock || !n ? 'opacity-50 cursor-not-allowed' : ''}">
+          <button onclick="startQuiz(${l.id})" class="nova-glass-card text-left p-5 rounded-3xl flex items-center gap-4">
             <div class="w-12 h-12 rounded-2xl bg-[#4A7FA7]/20 text-[#4A7FA7] dark:text-[#B3CFE5] flex items-center justify-center text-xl shrink-0">
-              <i class="fa-solid ${lock ? 'fa-lock' : l.icon}"></i>
+              <i class="fa-solid ${l.icon}"></i>
             </div>
             <div class="flex-1 min-w-0">
               <div class="text-[10px] opacity-75 font-bold uppercase tracking-wider">LEVEL ${l.id}</div>
@@ -1209,15 +1295,12 @@ function answerQ(k) {
   
   document.querySelectorAll('.qopt').forEach((b, j) => {
     b.disabled = true;
-    // Hijau (qok) HANYA jika jawaban pengguna BENAR
     b.classList.toggle('qok', j === k && ok);
-    // Merah (qbad) jika jawaban pengguna SALAH
     b.classList.toggle('qbad', j === k && !ok);
   });
 
   document.getElementById('qSc').textContent = pct();
 
-  // Pembahasan step-by-step hanya jika jawaban BENAR
   const expHtml = ok ? `
       <div class="space-y-1">
         <h4 class="text-[11px] font-extrabold uppercase text-[#4A7FA7] dark:text-[#B3CFE5]">Pembahasan Step-by-Step:</h4>
@@ -1244,7 +1327,6 @@ function finishQuiz() {
   if (Q.done) return; Q.done = true; clearInterval(Q.tm);
   const l = Q.lv, sc = pct(), pass = sc >= 70, p = prog(), nx = quizLevels[l.id], timeout = Q.left <= 0;
   p.scores[l.id] = Math.max(p.scores[l.id] || 0, sc);
-  if (pass && nx) p.unlocked = Math.max(p.unlocked, l.id + 1);
   saveProg(p);
 
   qb().innerHTML = `
@@ -1253,8 +1335,7 @@ function finishQuiz() {
         <i class="fa-solid ${pass ? 'fa-trophy' : 'fa-rotate-left'}"></i>
       </div>
       <div class="space-y-1">
-        <h2 class="text-2xl font-black">${timeout ? 'Waktu Habis! ' : ''}${pass ? 'Selamat! Level ' + l.id + ' Tuntas' : 'Belum Memenuhi Syarat Kelulusan'}</h2>
-        <p class="text-xs opacity-75">Nilai minimal kelulusan adalah 85</p>
+        <h2 class="text-2xl font-black">${timeout ? 'Waktu Habis! ' : ''}${pass ? 'Selamat! Level ' + l.id + ' Selesai' : 'Tetap Semangat!'}</h2>
       </div>
       
       <div class="text-5xl font-black text-[#4A7FA7] dark:text-[#B3CFE5]">${sc}</div>
@@ -1264,7 +1345,7 @@ function finishQuiz() {
         <button onclick="startQuiz(${l.id})" class="px-5 py-2.5 rounded-2xl nova-glass-card text-xs font-bold">
           <i class="fa-solid fa-rotate-right mr-1"></i> Coba Lagi
         </button>
-        ${pass && nx && nx.qs.length ? `
+        ${nx && nx.qs.length ? `
           <button onclick="startQuiz(${nx.id})" class="px-5 py-2.5 rounded-2xl nova-btn-accent text-xs font-bold">
             Lanjut Level ${nx.id} <i class="fa-solid fa-arrow-right ml-1"></i>
           </button>` : ''}
@@ -1275,7 +1356,6 @@ function finishQuiz() {
     </div>`;
 }
 
-/* On Window Ready Initialization */
 window.onload = () => {
   try {
     const savedTheme = localStorage.getItem('vg-theme');
@@ -1283,8 +1363,455 @@ window.onload = () => {
   } catch (e) {}
   syncThemeIcon();
   switchTab('tabPengertian');
+  updateProUI();
   navigateTo('hero');
 };
 </script>
+
+<!-- ==========================================
+     VG-AUTH: FITUR LOGIN
+     ========================================== -->
+<style>
+  #vgAuth { position: fixed; inset: 0; z-index: 1000; display: none; align-items: center; justify-content: center; padding: 1rem; overflow-y: auto; background: var(--bg-main); }
+  #vgAuth.show { display: flex; }
+  #vgAuth .vga-glow { position: fixed; inset: 0; pointer-events: none; background: radial-gradient(circle at 10% 15%, rgba(74,127,167,.22), transparent 40%), radial-gradient(circle at 90% 85%, rgba(179,207,229,.2), transparent 45%); }
+  #vgAuth .vga-card { position: relative; width: 100%; max-width: 26rem; border-radius: 1.75rem; padding: 2rem 1.75rem; color: var(--text-main); }
+  #vgAuth .vga-logo { width: 3.25rem; height: 3.25rem; border-radius: 1.1rem; margin: 0 auto .75rem; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg,#4A7FA7,#B3CFE5); color: #0A1931; font-size: 1.5rem; box-shadow: 0 6px 16px rgba(74,127,167,.35); }
+  #vgAuth h2 { text-align: center; font-size: 1.4rem; font-weight: 900; letter-spacing: -.01em; }
+  #vgAuth .vga-sub { text-align: center; font-size: .78rem; color: var(--text-muted); opacity: .85; margin: .25rem 0 1.25rem; }
+  #vgAuth .vga-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: .25rem; padding: .25rem; border-radius: 1rem; background: var(--glass-panel); border: 1px solid var(--glass-border); margin-bottom: 1.1rem; }
+  #vgAuth .vga-tab { padding: .55rem; border-radius: .8rem; font-size: .8rem; font-weight: 700; color: var(--text-muted); transition: all .2s; }
+  #vgAuth .vga-tab.on { background: var(--accent-gradient); color: var(--btn-text); }
+  #vgAuth label { display: block; font-size: .72rem; font-weight: 700; margin: .8rem 0 .3rem; color: var(--text-muted); }
+  #vgAuth .vga-wrap { position: relative; }
+  #vgAuth input { width: 100%; padding: .7rem .9rem; border-radius: .85rem; font-size: .88rem; color: var(--text-main); background: var(--glass-card); border: 1px solid var(--glass-border); outline: none; transition: border-color .2s, box-shadow .2s; }
+  #vgAuth input:focus { border-color: #4A7FA7; box-shadow: 0 0 0 3px rgba(74,127,167,.25); }
+  #vgAuth .vga-eye { position: absolute; right: .35rem; top: 50%; transform: translateY(-50%); width: 2.2rem; height: 2.2rem; color: var(--text-muted); opacity: .7; }
+  #vgAuth .vga-eye:hover { opacity: 1; }
+  #vgAuth .vga-err { min-height: 1.1rem; margin-top: .75rem; font-size: .76rem; font-weight: 600; color: #ef4444; text-align: center; }
+  #vgAuth .vga-submit { width: 100%; margin-top: .35rem; padding: .8rem; border-radius: 1rem; font-size: .88rem; }
+  #vgAuth .vga-foot { margin-top: 1rem; text-align: center; font-size: .66rem; color: var(--text-muted); opacity: .65; line-height: 1.5; }
+  #vgUserChip { display: flex; align-items: center; gap: .5rem; }
+  #vgUserChip .vg-name { font-size: .72rem; font-weight: 700; max-width: 7rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  @media (max-width: 640px) { #vgUserChip .vg-name { display: none; } }
+</style>
+
+<div id="vgAuth" role="dialog" aria-modal="true" aria-labelledby="vgaTitle">
+  <div class="vga-glow"></div>
+  <div class="vga-card nova-glass-panel">
+    <div class="vga-logo"><i class="fa-solid fa-cube"></i></div>
+    <h2 id="vgaTitle">VisuGeom 3D</h2>
+    <p class="vga-sub" id="vgaSub">Masuk untuk mulai menjelajahi geometri ruang.</p>
+
+    <div class="vga-tabs">
+      <button type="button" class="vga-tab on" id="vgaTabLogin" onclick="VGAuth.mode('login')">Masuk</button>
+      <button type="button" class="vga-tab" id="vgaTabReg" onclick="VGAuth.mode('register')">Daftar</button>
+    </div>
+
+    <form id="vgaForm" autocomplete="on" onsubmit="return VGAuth.submit(event)" novalidate>
+      <div id="vgaNameRow" style="display:none">
+        <label for="vgaName">Nama Lengkap</label>
+        <input id="vgaName" type="text" autocomplete="name" maxlength="40" placeholder="Nama kamu">
+      </div>
+      <label for="vgaUser">Username</label>
+      <input id="vgaUser" type="text" autocomplete="username" maxlength="24" placeholder="mis. andi_08" autocapitalize="none" spellcheck="false">
+      <label for="vgaPass">Password</label>
+      <div class="vga-wrap">
+        <input id="vgaPass" type="password" autocomplete="current-password" placeholder="Minimal 6 karakter" style="padding-right:2.8rem">
+        <button type="button" class="vga-eye" onclick="VGAuth.toggleEye()" aria-label="Tampilkan/sembunyikan password"><i id="vgaEyeIcon" class="fa-solid fa-eye"></i></button>
+      </div>
+      <div id="vgaPass2Row" style="display:none">
+        <label for="vgaPass2">Ulangi Password</label>
+        <input id="vgaPass2" type="password" autocomplete="new-password" placeholder="Ketik ulang password">
+      </div>
+      <div class="vga-err" id="vgaErr" role="alert"></div>
+      <button type="submit" class="vga-submit nova-btn-accent" id="vgaBtn">Masuk</button>
+    </form>
+    <p class="vga-foot">Akun disimpan di perangkat/browser ini saja.</p>
+  </div>
+</div>
+
+<script>
+const VGAuth = (() => {
+  const USERS_KEY = 'vg-auth-users', SESSION_KEY = 'vg-auth-session';
+  const $ = id => document.getElementById(id);
+  let current = 'login';
+
+  const read = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch (e) { return d; } };
+  const write = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } };
+
+  async function hash(pw, salt) {
+    const data = salt + ':' + pw;
+    if (window.crypto && crypto.subtle) {
+      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(data));
+      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+    let h = 5381; for (let i = 0; i < data.length; i++) h = ((h << 5) + h + data.charCodeAt(i)) | 0;
+    return 'f' + (h >>> 0).toString(16);
+  }
+  const newSalt = () => Array.from(crypto.getRandomValues ? crypto.getRandomValues(new Uint8Array(12)) : [Math.random()*255|0, Date.now()%255], b => b.toString(16).padStart(2, '0')).join('');
+
+  function lockApp(lock) {
+    document.querySelectorAll('body > header, body > main, body > footer').forEach(el => {
+      if (lock) el.setAttribute('inert', ''); else el.removeAttribute('inert');
+    });
+  }
+
+  function showAuth() {
+    $('vgAuth').classList.add('show');
+    lockApp(true);
+    mode('login');
+    setTimeout(() => $('vgaUser').focus(), 50);
+  }
+  function hideAuth() { $('vgAuth').classList.remove('show'); lockApp(false); }
+
+  function mode(m) {
+    current = m;
+    const reg = m === 'register';
+    $('vgaTabLogin').classList.toggle('on', !reg);
+    $('vgaTabReg').classList.toggle('on', reg);
+    $('vgaNameRow').style.display = reg ? 'block' : 'none';
+    $('vgaPass2Row').style.display = reg ? 'block' : 'none';
+    $('vgaBtn').textContent = reg ? 'Buat Akun' : 'Masuk';
+    $('vgaSub').textContent = reg ? 'Buat akun baru untuk mulai belajar.' : 'Masuk untuk mulai menjelajahi geometri ruang.';
+    $('vgaPass').autocomplete = reg ? 'new-password' : 'current-password';
+    $('vgaErr').textContent = '';
+  }
+
+  function toggleEye() {
+    const p = $('vgaPass'), show = p.type === 'password';
+    p.type = show ? 'text' : 'password';
+    $('vgaPass2').type = show ? 'text' : 'password';
+    $('vgaEyeIcon').className = 'fa-solid ' + (show ? 'fa-eye-slash' : 'fa-eye');
+  }
+
+  const err = msg => { $('vgaErr').textContent = msg; return false; };
+
+  async function submit(e) {
+    e.preventDefault();
+    const username = $('vgaUser').value.trim().toLowerCase();
+    const pw = $('vgaPass').value;
+    const users = read(USERS_KEY, {});
+    if (!/^[a-z0-9_.]{3,24}$/.test(username)) return err('Username 3–24 karakter: huruf, angka, _ atau .');
+    if (pw.length < 6) return err('Password minimal 6 karakter.');
+
+    if (current === 'register') {
+      const name = $('vgaName').value.trim();
+      if (!name) return err('Nama lengkap wajib diisi.');
+      if (pw !== $('vgaPass2').value) return err('Konfirmasi password tidak cocok.');
+      if (users[username]) return err('Username sudah dipakai, coba yang lain.');
+      const salt = newSalt();
+      users[username] = { name, salt, hash: await hash(pw, salt), created: Date.now() };
+      if (!write(USERS_KEY, users)) return err('Gagal menyimpan akun. Pastikan penyimpanan browser aktif.');
+      startSession(username, name);
+    } else {
+      const u = users[username];
+      if (!u || (await hash(pw, u.salt)) !== u.hash) return err('Username atau password salah.');
+      startSession(username, u.name);
+    }
+    return false;
+  }
+
+  function startSession(username, name) {
+    write(SESSION_KEY, { username, name });
+    $('vgaForm').reset();
+    $('vgaErr').textContent = '';
+    renderChip(name);
+    hideAuth();
+  }
+
+  function logout() {
+    try { localStorage.removeItem(SESSION_KEY); } catch (e) {}
+    const chip = $('vgUserChip'); if (chip) chip.remove();
+    showAuth();
+  }
+
+  function renderChip(name) {
+    let chip = $('vgUserChip'); if (chip) chip.remove();
+    const bar = document.querySelector('body > header .flex.items-center.space-x-3:last-child');
+    if (!bar) return;
+    chip = document.createElement('div');
+    chip.id = 'vgUserChip';
+    chip.innerHTML = '<span class="vg-name nova-glass-card" style="padding:.55rem .8rem;border-radius:1rem" title=""></span>' +
+      '<button type="button" class="cbtn" title="Keluar" aria-label="Keluar"><i class="fa-solid fa-right-from-bracket"></i></button>';
+    chip.querySelector('.vg-name').textContent = name;
+    chip.querySelector('.vg-name').title = name;
+    chip.querySelector('button').onclick = logout;
+    bar.appendChild(chip);
+  }
+
+  function init() {
+    const s = read(SESSION_KEY, null);
+    const users = read(USERS_KEY, {});
+    if (s && users[s.username]) { renderChip(users[s.username].name); hideAuth(); }
+    else showAuth();
+  }
+  init();
+  return { mode, submit, toggleEye, logout };
+})();
+</script>
+
+<!-- ==========================================================
+     VG-SIM: ADD-ON FITUR 3D PREMIUM (DENGAN GATEWAY PAYWALL)
+     ========================================================== -->
+<style>
+  #tabSim input[type=checkbox]{accent-color:#4A7FA7;width:1.1rem;height:1.1rem;cursor:pointer}
+</style>
+
+<script>
+const SIM = { cut:false, axis:'y', cutPos:50, water:false, wl:50, ghost:false, dRuang:false, dBidang:false, dPlane:false };
+const cutPlane = new THREE.Plane(new THREE.Vector3(0,-1,0), 0);
+const waterPlane = new THREE.Plane(new THREE.Vector3(0,-1,0), 0);
+let simPlane = null;
+const $s = id => document.getElementById(id);
+
+(function injectUI(){
+  const bar = $s('tabBtnJaring').parentElement;
+  const b = document.createElement('button');
+  b.id = 'tabBtnSim'; b.className = 'flex-1 py-2 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1';
+  b.setAttribute('onclick', "switchTab('tabSim')"); 
+  b.innerHTML = `Simulasi <i class="fa-solid fa-crown text-[10px] text-amber-400"></i>`; 
+  bar.appendChild(b);
+
+  const cap = 'text-xs font-extrabold uppercase text-[#4A7FA7] dark:text-[#B3CFE5]';
+  const row = 'flex items-center justify-between text-xs font-bold';
+  const sel = 'style="background:var(--glass-card);border:1px solid var(--glass-border);color:var(--text-main)"';
+  const p = document.createElement('div');
+  p.id = 'tabSim'; p.className = 'hidden space-y-4';
+  p.innerHTML = `
+    <!-- Lock Notice untuk Non-Pro -->
+    <div id="simProLockNotice" class="hidden p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-center space-y-2">
+      <i class="fa-solid fa-lock text-amber-500 text-xl"></i>
+      <h4 class="text-xs font-bold">Fitur Simulator 3D Terkunci</h4>
+      <p class="text-[11px] opacity-80">Fitur Potong Penampang, Isi Air, & Diagonal khusus pengguna PRO.</p>
+      <button onclick="openLicenseModal()" class="px-4 py-2 rounded-xl bg-amber-500 text-slate-900 font-bold text-xs shadow-md hover:brightness-110">
+        Buka Akses PRO (Rp15.000)
+      </button>
+    </div>
+
+    <div class="nova-glass-card p-4 rounded-2xl space-y-3">
+      <label class="flex items-center justify-between ${cap}"><span><i class="fa-solid fa-scissors mr-1"></i> Potong Penampang</span>
+        <input type="checkbox" data-sim="cut" onchange="simCheckGate('cut',this.checked)"></label>
+      <select id="simAxis" ${sel} class="w-full text-xs p-2 rounded-xl" onchange="simCheckGate('axis',this.value)">
+        <option value="y">Horizontal (sumbu Y)</option>
+        <option value="x">Vertikal kiri–kanan (sumbu X)</option>
+        <option value="z">Vertikal depan–belakang (sumbu Z)</option>
+      </select>
+      <div class="${row}"><span>Posisi bidang potong</span><span id="simCutVal">50%</span></div>
+      <input type="range" id="simCut" min="0" max="100" value="50" class="w-full h-1.5 rounded-lg cursor-pointer" oninput="simCheckGate('cutPos',+this.value)">
+    </div>
+
+    <div class="nova-glass-card p-4 rounded-2xl space-y-3">
+      <label class="flex items-center justify-between ${cap}"><span><i class="fa-solid fa-droplet mr-1"></i> Isi Air (Volume)</span>
+        <input type="checkbox" data-sim="water" onchange="simCheckGate('water',this.checked)"></label>
+      <div class="${row}"><span>Tinggi air</span><span id="simWlVal">50%</span></div>
+      <input type="range" id="simWl" min="0" max="100" value="50" class="w-full h-1.5 rounded-lg cursor-pointer" oninput="simCheckGate('wl',+this.value)">
+      <div id="simWaterInfo" class="text-xs font-mono opacity-90"></div>
+      <label id="simGhostRow" class="hidden items-center justify-between text-xs font-bold"><span id="simGhostTxt">Bandingkan dengan tabung</span>
+        <input type="checkbox" data-sim="ghost" onchange="simCheckGate('ghost',this.checked)"></label>
+    </div>
+
+    <div id="simDiagCard" class="hidden nova-glass-card p-4 rounded-2xl space-y-3">
+      <h4 class="${cap}"><i class="fa-solid fa-slash mr-1"></i> Diagonal</h4>
+      <label class="${row}"><span class="text-rose-400">● Diagonal ruang</span><input type="checkbox" data-sim="dRuang" onchange="simCheckGate('dRuang',this.checked)"></label>
+      <label class="${row}"><span class="text-amber-400">● Diagonal bidang</span><input type="checkbox" data-sim="dBidang" onchange="simCheckGate('dBidang',this.checked)"></label>
+      <label class="${row}"><span class="text-emerald-400">● Bidang diagonal</span><input type="checkbox" data-sim="dPlane" onchange="simCheckGate('dPlane',this.checked)"></label>
+      <div id="simDiagInfo" class="text-xs font-mono opacity-90 space-y-1"></div>
+    </div>
+
+    <button onclick="simShotGate()" class="w-full py-2.5 rounded-xl nova-btn-accent text-xs font-bold flex items-center justify-center gap-2">
+      <i class="fa-solid fa-camera"></i> Simpan Gambar 3D (PNG)
+    </button>`;
+  $s('tabJaring').after(p);
+})();
+
+/* Gatekeeper check sebelum mengaktifkan fungsi PRO */
+function simCheckGate(key, val) {
+  if (!isProUnlocked()) {
+    openLicenseModal();
+    simSyncUI();
+    return;
+  }
+  simSet(key, val);
+}
+
+function simShotGate() {
+  if (!isProUnlocked()) {
+    openLicenseModal();
+    return;
+  }
+  simShot();
+}
+
+switchTab = function(id){
+  const map = { tabPengertian:'tabBtnPengertian', tabRumus:'tabBtnRumus', tabJaring:'tabBtnJaring', tabSim:'tabBtnSim' };
+  Object.keys(map).forEach(k => {
+    if ($s(k)) {
+      $s(k).classList.toggle('hidden', k !== id);
+      if ($s(map[k])) {
+        $s(map[k]).className = 'flex-1 py-2 text-xs font-bold rounded-xl transition ' + (k === id ? 'nova-btn-accent shadow-sm' : 'opacity-70 hover:opacity-100');
+      }
+    }
+  });
+  if (id === 'tabSim') simSyncUI();
+};
+
+function simHalf(k){ return ({ kubus:1, balok:.75 }[k] ?? (k==='bola' ? P('r',5) : k==='prisma' ? P('tp',7)/2 : P('t',6)/2)); }
+
+function waterGeo(k){
+  switch(k){
+    case 'kubus': return new THREE.BoxGeometry(2,2,2);
+    case 'balok': return new THREE.BoxGeometry(3,1.5,2);
+    case 'tabung': return new THREE.CylinderGeometry(P('r',4),P('r',4),P('t',8),48);
+    case 'kerucut': return new THREE.ConeGeometry(P('r',4),P('t',7),48);
+    case 'bola': return new THREE.SphereGeometry(P('r',5),40,40);
+    case 'limas': { const g = new THREE.ConeGeometry(P('s',5)/Math.SQRT2,P('t',6),4); g.rotateY(Math.PI/4); return g; }
+    case 'prisma': {
+      const a=P('a',4), ta=P('ta',3), H=P('tp',7), V=THREE.Vector2;
+      const g = new THREE.ExtrudeGeometry(new THREE.Shape([new V(-a/2,ta/3),new V(a/2,ta/3),new V(0,-2*ta/3)]),{depth:H,bevelEnabled:false});
+      g.rotateX(-Math.PI/2); g.translate(0,-H/2,0); return g;
+    }
+  }
+}
+
+function simCyl(a,b,col){
+  const v = new THREE.Vector3().subVectors(b,a);
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(.035,.035,v.length(),8), new THREE.MeshBasicMaterial({color:col}));
+  m.position.copy(a).addScaledVector(v,.5);
+  m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), v.normalize());
+  return m;
+}
+
+function simRebuild(){
+  if (!scene || !currentMeshGroup) return;
+  const g = currentMeshGroup, k = currentShapeKey, T = THREE.Vector3;
+  (g.userData.sims || []).forEach(o => { g.remove(o); disposeGroup(o); });
+  const sims = g.userData.sims = []; g.userData.water = null;
+  const add = o => { g.add(o); sims.push(o); return o; };
+  renderer.localClippingEnabled = true;
+
+  if (SIM.water && isProUnlocked()) {
+    const w = add(new THREE.Mesh(waterGeo(k), new THREE.MeshStandardMaterial({ color:0x38bdf8, transparent:true, opacity:.8, roughness:.1, side:THREE.DoubleSide })));
+    w.scale.setScalar(.97); g.userData.water = w;
+    if (SIM.ghost && (k==='kerucut' || k==='limas')) {
+      const gg = k==='kerucut' ? new THREE.CylinderGeometry(P('r',4),P('r',4),P('t',7),48) : new THREE.BoxGeometry(P('s',5),P('t',6),P('s',5));
+      add(new THREE.LineSegments(new THREE.EdgesGeometry(gg,30), new THREE.LineBasicMaterial({color:0xfbbf24})));
+    }
+  }
+
+  if ((k==='kubus' || k==='balok') && isProUnlocked()) {
+    const [w,h,d] = k==='kubus' ? [2,2,2] : [3,1.5,2], x=w/2, y=h/2, z=d/2;
+    const diag = new THREE.Group(); add(diag); g.userData.diag = diag;
+    if (SIM.dRuang) [[[-x,-y,-z],[x,y,z]],[[x,-y,-z],[-x,y,z]],[[-x,y,-z],[x,-y,z]],[[-x,-y,z],[x,y,-z]]]
+      .forEach(([a,b]) => diag.add(simCyl(new T(...a),new T(...b),0xf43f5e)));
+    if (SIM.dBidang) [[[-x,-y,-z],[x,-y,z]],[[-x,y,-z],[x,y,z]],[[-x,-y,z],[x,y,z]],[[-x,-y,-z],[x,y,-z]],[[-x,-y,-z],[-x,y,z]],[[x,-y,-z],[x,y,z]]]
+      .forEach(([a,b]) => diag.add(simCyl(new T(...a),new T(...b),0xfbbf24)));
+    if (SIM.dPlane) {
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute([-x,-y,-z, x,-y,-z, x,y,z, -x,-y,-z, x,y,z, -x,y,z],3));
+      diag.add(new THREE.Mesh(geo,new THREE.MeshBasicMaterial({color:0x22c55e,transparent:true,opacity:.45,side:THREE.DoubleSide,depthWrite:false})));
+    }
+  }
+  simUpdate();
+}
+
+function simUpdate(){
+  if (!scene || !currentMeshGroup) return;
+  const g = currentMeshGroup, k = currentShapeKey, fold = netFoldFactor > 0, planes = [];
+
+  if (SIM.cut && isProUnlocked()) {
+    g.updateMatrixWorld(true);
+    const b = new THREE.Box3();
+    g.traverse(o => { if (o.isMesh && !o.userData.sim && !(g.userData.sims||[]).includes(o)) b.expandByObject(o); });
+    if (!b.isEmpty()) {
+      const ax = SIM.axis, n = new THREE.Vector3(); n[ax] = -1;
+      const pos = b.min[ax] + (b.max[ax] - b.min[ax]) * SIM.cutPos / 100;
+      cutPlane.normal.copy(n); cutPlane.constant = pos; planes.push(cutPlane);
+      if (!simPlane) {
+        simPlane = new THREE.Mesh(new THREE.PlaneGeometry(1,1), new THREE.MeshBasicMaterial({color:0xfbbf24,transparent:true,opacity:.2,side:THREE.DoubleSide,depthWrite:false}));
+        scene.add(simPlane);
+      }
+      const c = b.getCenter(new THREE.Vector3()); c[ax] = pos; simPlane.position.copy(c);
+      simPlane.rotation.set(ax==='y' ? Math.PI/2 : 0, ax==='x' ? Math.PI/2 : 0, 0);
+      const sz = Math.max(...b.getSize(new THREE.Vector3()).toArray()) * 1.4; simPlane.scale.set(sz,sz,1);
+    }
+  }
+  if (simPlane) simPlane.visible = (planes.length > 0 && isProUnlocked());
+
+  const wm = g.userData.water;
+  if (wm && isProUnlocked()) {
+    const hh = simHalf(k) * g.scale.y;
+    waterPlane.constant = -hh + 2 * hh * SIM.wl / 100;
+    wm.material.clippingPlanes = [waterPlane, ...planes]; wm.material.needsUpdate = true;
+  }
+  g.traverse(o => {
+    if (!o.isMesh || (g.userData.sims||[]).includes(o)) return;
+    const m = o.material;
+    m.clippingPlanes = planes.length ? planes : null;
+    m.transparent = (SIM.water && isProUnlocked()); m.opacity = (SIM.water && isProUnlocked()) ? .25 : 1; m.depthWrite = !(SIM.water && isProUnlocked()); m.needsUpdate = true;
+  });
+  (g.userData.sims || []).forEach(o => o.visible = !fold);
+  simLabels();
+}
+
+function simLabels(){
+  const k = currentShapeKey, cp = currentParams || {};
+  $s('simCutVal').textContent = SIM.cutPos + '%';
+  $s('simWlVal').textContent = SIM.wl + '%';
+  const f = SIM.wl / 100;
+  const fr = (k==='kerucut' || k==='limas') ? 1 - Math.pow(1-f,3) : k==='bola' ? f*f*(3-2*f) : f;
+  const tot = parseFloat(shapesData[k].calc(cp).volVal);
+  $s('simWaterInfo').innerHTML = SIM.water ? `Volume terisi: <b>${(fr*100).toFixed(1)}%</b> ≈ ${(fr*tot).toFixed(1)} dari ${tot.toFixed(1)} cm³` : 'Aktifkan untuk melihat air mengisi bangun.';
+  const gr = $s('simGhostRow'); const showG = k==='kerucut' || k==='limas';
+  gr.classList.toggle('hidden', !showG); gr.classList.toggle('flex', showG);
+  $s('simGhostTxt').textContent = k==='kerucut' ? 'Bandingkan dengan tabung (V = 3 × kerucut)' : 'Bandingkan dengan prisma (V = 3 × limas)';
+  const isBox = k==='kubus' || k==='balok';
+  $s('simDiagCard').classList.toggle('hidden', !isBox);
+  if (isBox) {
+    const p = k==='kubus' ? cp.sisi : cp.p, l = k==='kubus' ? cp.sisi : cp.l, t = k==='kubus' ? cp.sisi : cp.t;
+    $s('simDiagInfo').innerHTML =
+      `<div>Diagonal bidang = √(p²+l²) = <b>${Math.hypot(p,l).toFixed(2)}</b> cm</div>` +
+      `<div>Diagonal ruang = √(p²+l²+t²) = <b>${Math.hypot(p,l,t).toFixed(2)}</b> cm</div>` +
+      `<div>Luas bidang diagonal = p×√(l²+t²) = <b>${(p*Math.hypot(l,t)).toFixed(2)}</b> cm²</div>`;
+  }
+}
+
+function simSyncUI(){
+  const pro = isProUnlocked();
+  if ($s('simProLockNotice')) $s('simProLockNotice').classList.toggle('hidden', pro);
+  document.querySelectorAll('#tabSim [data-sim]').forEach(e => {
+    e.checked = pro ? !!SIM[e.dataset.sim] : false;
+  });
+  $s('simCut').value = SIM.cutPos; $s('simWl').value = SIM.wl; $s('simAxis').value = SIM.axis;
+  simLabels();
+}
+
+function simSet(key, v){
+  SIM[key] = v;
+  if (['water','ghost','dRuang','dBidang','dPlane'].includes(key)) simRebuild(); else simUpdate();
+}
+
+function simShot(){
+  if (!renderer) return;
+  renderer.render(scene, camera);
+  const a = document.createElement('a');
+  a.download = 'visugeom-' + currentShapeKey + '.png';
+  a.href = renderer.domElement.toDataURL('image/png'); a.click();
+}
+
+const _buildShape3D = buildShape3D;
+buildShape3D = function(k){ _buildShape3D(k); simRebuild(); };
+
+const _updateNets = updateNetsUnfold;
+updateNetsUnfold = function(v){ _updateNets(v); simUpdate(); };
+
+const _changeShape = changeShape;
+changeShape = function(k){
+  Object.assign(SIM, { cut:false, water:false, ghost:false, dRuang:false, dBidang:false, dPlane:false, cutPos:50, wl:50 });
+  _changeShape(k); simSyncUI();
+};
+simSyncUI();
+</script>
+
 </body>
 </html>
