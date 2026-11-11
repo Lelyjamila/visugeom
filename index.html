@@ -190,7 +190,7 @@
     </div>
 
     <div class="flex items-center space-x-3">
-      <!-- Status Premium Badge -->
+      <!-- Status Badge Fitur PRO -->
       <button id="btnUpgradePro" onclick="openLicenseModal()" class="px-3 py-1.5 rounded-xl bg-amber-500/20 text-amber-500 border border-amber-500/40 text-xs font-bold flex items-center gap-1.5 hover:bg-amber-500/30 transition">
         <i class="fa-solid fa-crown text-amber-400"></i>
         <span id="proStatusText">Upgrade PRO</span>
@@ -421,7 +421,9 @@
 
 </main>
 
-<!-- MODAL PEMBELIAN / AKTIVASI LISENSI PRO (FIXED FOR GITHUB PAGES) -->
+<!-- ==========================================================
+     MODAL ACTIVATION (DI LUAR MAIN UNTUK MENCEGAH INTERRUPT Z-INDEX)
+     ========================================================== -->
 <div id="modalLicense" class="fixed inset-0 z-[2000] hidden items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md">
   <div class="nova-glass-panel max-w-md w-full p-6 sm:p-8 rounded-3xl space-y-5 relative border border-amber-500/30 text-white">
     <button onclick="closeLicenseModal()" class="absolute top-4 right-4 text-xs p-2 opacity-70 hover:opacity-100">
@@ -446,10 +448,9 @@
         <span class="text-sm font-black text-amber-400">Rp 15.000</span>
       </div>
       
-      <!-- Tombol Beli yang Mengarah ke WhatsApp/Checkout -->
       <a href="https://wa.me/6281234567890?text=Halo%20Admin%20VisuGeom,%20saya%20ingin%20membeli%20Kode%20Lisensi%20PRO%20seharga%20Rp15.000" 
          target="_blank" 
-         class="w-full py-2 px-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-900 text-xs font-extrabold flex items-center justify-center gap-2 shadow-lg transition">
+         class="w-full py-2.5 px-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-900 text-xs font-extrabold flex items-center justify-center gap-2 shadow-lg transition">
         <i class="fa-brands fa-whatsapp text-sm"></i> Beli Lisensi via WhatsApp / QRIS
       </a>
     </div>
@@ -494,13 +495,15 @@ function updateProUI() {
 }
 
 function openLicenseModal() {
-  document.getElementById('modalLicense').classList.remove('hidden');
-  document.getElementById('modalLicense').classList.add('flex');
+  const modal = document.getElementById('modalLicense');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
 }
 
 function closeLicenseModal() {
-  document.getElementById('modalLicense').classList.add('hidden');
-  document.getElementById('modalLicense').classList.remove('flex');
+  const modal = document.getElementById('modalLicense');
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
 }
 
 function activateLicense() {
@@ -1561,7 +1564,7 @@ const VGAuth = (() => {
 </script>
 
 <!-- ==========================================================
-     VG-SIM: ADD-ON FITUR 3D PREMIUM (DENGAN GATEWAY PAYWALL)
+     VG-SIM: ADD-ON FITUR 3D PREMIUM (WITH PAYWALL GATEWAY)
      ========================================================== -->
 <style>
   #tabSim input[type=checkbox]{accent-color:#4A7FA7;width:1.1rem;height:1.1rem;cursor:pointer}
@@ -1588,7 +1591,7 @@ const $s = id => document.getElementById(id);
   const p = document.createElement('div');
   p.id = 'tabSim'; p.className = 'hidden space-y-4';
   p.innerHTML = `
-    <!-- Lock Notice untuk Non-Pro -->
+    <!-- Lock Notice untuk Pengguna Non-PRO -->
     <div id="simProLockNotice" class="hidden p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-center space-y-2">
       <i class="fa-solid fa-lock text-amber-500 text-xl"></i>
       <h4 class="text-xs font-bold">Fitur Simulator 3D Terkunci</h4>
@@ -1634,7 +1637,6 @@ const $s = id => document.getElementById(id);
   $s('tabJaring').after(p);
 })();
 
-/* Gatekeeper check sebelum mengaktifkan fungsi PRO */
 function simCheckGate(key, val) {
   if (!isProUnlocked()) {
     openLicenseModal();
@@ -1724,6 +1726,8 @@ function simRebuild(){
   simUpdate();
 }
 
+const isSimObj = o => { const s = currentMeshGroup.userData.sims || []; for (let p = o; p; p = p.parent) if (s.includes(p)) return true; return false; };
+
 function simUpdate(){
   if (!scene || !currentMeshGroup) return;
   const g = currentMeshGroup, k = currentShapeKey, fold = netFoldFactor > 0, planes = [];
@@ -1731,7 +1735,7 @@ function simUpdate(){
   if (SIM.cut && isProUnlocked()) {
     g.updateMatrixWorld(true);
     const b = new THREE.Box3();
-    g.traverse(o => { if (o.isMesh && !o.userData.sim && !(g.userData.sims||[]).includes(o)) b.expandByObject(o); });
+    g.traverse(o => { if (o.isMesh && !isSimObj(o)) b.expandByObject(o); });
     if (!b.isEmpty()) {
       const ax = SIM.axis, n = new THREE.Vector3(); n[ax] = -1;
       const pos = b.min[ax] + (b.max[ax] - b.min[ax]) * SIM.cutPos / 100;
@@ -1754,7 +1758,7 @@ function simUpdate(){
     wm.material.clippingPlanes = [waterPlane, ...planes]; wm.material.needsUpdate = true;
   }
   g.traverse(o => {
-    if (!o.isMesh || (g.userData.sims||[]).includes(o)) return;
+    if (!o.isMesh || isSimObj(o)) return;
     const m = o.material;
     m.clippingPlanes = planes.length ? planes : null;
     m.transparent = (SIM.water && isProUnlocked()); m.opacity = (SIM.water && isProUnlocked()) ? .25 : 1; m.depthWrite = !(SIM.water && isProUnlocked()); m.needsUpdate = true;
@@ -1820,6 +1824,255 @@ changeShape = function(k){
   _changeShape(k); simSyncUI();
 };
 simSyncUI();
+</script>
+
+<!-- VG-NETS: Pilihan 11 pola jaring-jaring -->
+<script>
+const NET_DEFS = (() => {
+  const row = cols => [0,1,2,3,4].map(c => cols.includes(c) ? '#' : '.').join('');
+  const L = [];
+  [[0,0],[0,1],[0,2],[0,3],[1,1],[1,2]].forEach(([a,b]) => L.push([row([a]), row([0,1,2,3]), row([b])]));
+  [1,2,3].forEach(c => L.push([row([0,1]), row([1,2,3]), row([c])]));
+  L.push([row([0,1]), row([1,2]), row([2,3])]);
+  L.push([row([0,1,2]), row([2,3,4])]);
+  return L;
+})();
+
+function layoutNet(def, dims){
+  const cells = [];
+  def.forEach((s, r) => [...s].forEach((ch, c) => { if (ch === '#') cells.push({ r, c }); }));
+  const key = (r, c) => r + ',' + c, map = new Map(cells.map(o => [key(o.r, o.c), o]));
+  const V = THREE.Vector3, rd = v => Math.round(v);
+  const dom = v => { const a = [Math.abs(v.x), Math.abs(v.y), Math.abs(v.z)]; return a.indexOf(Math.max(...a)); };
+  const ext = o => {
+    o.ex = dims[dom(new V(1,0,0).applyQuaternion(o.q))];
+    o.ez = dims[dom(new V(0,0,1).applyQuaternion(o.q))];
+    const n = new V(0,-1,0).applyQuaternion(o.q); o.id = rd(n.x) + ',' + rd(n.y) + ',' + rd(n.z);
+  };
+  const root = cells[0]; root.q = new THREE.Quaternion(); root.parent = null;
+  root.dx = 0; root.dz = 0; root.cx = 0; root.cz = 0; ext(root);
+  const queue = [root], seen = new Set([key(root.r, root.c)]), order = [root];
+  while (queue.length) {
+    const p = queue.shift();
+    [[1,0],[-1,0],[0,1],[0,-1]].forEach(([dx, dz]) => {
+      const ch = map.get(key(p.r + dz, p.c + dx));
+      if (!ch || seen.has(key(ch.r, ch.c))) return;
+      seen.add(key(ch.r, ch.c));
+      ch.parent = p; ch.dx = dx; ch.dz = dz; ch.axis = dz ? 'x' : 'z';
+      ch.closed = dz ? (dz > 0 ? -Math.PI / 2 : Math.PI / 2) : (dx > 0 ? Math.PI / 2 : -Math.PI / 2);
+      ch.q = p.q.clone().multiply(new THREE.Quaternion().setFromAxisAngle(new V(ch.axis === 'x' ? 1 : 0, 0, ch.axis === 'z' ? 1 : 0), ch.closed));
+      ext(ch);
+      ch.cx = p.cx + dx * (p.ex + ch.ex) / 2; ch.cz = p.cz + dz * (p.ez + ch.ez) / 2;
+      queue.push(ch); order.push(ch);
+    });
+  }
+  if (order.length !== 6 || new Set(order.map(o => o.id)).size !== 6) return null;
+  order.forEach((o, i) => o.i = i);
+  const minX = Math.min(...order.map(o => o.cx - o.ex / 2)), maxX = Math.max(...order.map(o => o.cx + o.ex / 2));
+  const minZ = Math.min(...order.map(o => o.cz - o.ez / 2)), maxZ = Math.max(...order.map(o => o.cz + o.ez / 2));
+  return { order, shiftX: (minX + maxX) / 2, shiftZ: (minZ + maxZ) / 2 };
+}
+
+const NET_OK = NET_DEFS.filter(d => { try { return !!layoutNet(d, [1,1,1]); } catch (e) { return false; } });
+let NETSEL = 0;
+
+createBoxNets = function(g, mat, w, h, d){
+  g.userData.hinges = []; g.userData.noNet = false;
+  const net = layoutNet(NET_OK[NETSEL % NET_OK.length], [w, h, d]);
+  g.userData.shiftX = net.shiftX; g.userData.shiftZ = net.shiftZ; g.userData.boxNet = true;
+  const base = new THREE.Group(); base.position.y = -h / 2; g.add(base);
+  const groups = new Map();
+  net.order.forEach(o => {
+    const hg = new THREE.Group();
+    o.offX = o.dx * o.ex / 2; o.offZ = o.dz * o.ez / 2;
+    if (o.parent) {
+      hg.position.set(o.parent.offX + o.dx * o.parent.ex / 2, 0, o.parent.offZ + o.dz * o.parent.ez / 2);
+      g.userData.hinges.push({ group: hg, axis: o.axis, targetAngle: 0, closed: o.closed });
+      groups.get(o.parent).add(hg);
+    } else base.add(hg);
+    const m = makeFace(o.ex, o.ez, mat, Math.PI / 2, 0, 0);
+    m.material.color.setHSL(o.i / 6, 0.45, 0.55);
+    m.position.set(o.offX, 0, o.offZ); hg.add(m);
+    groups.set(o, hg);
+  });
+};
+
+const _unNets = updateNetsUnfold;
+updateNetsUnfold = function(v){
+  _unNets(v);
+  const g = currentMeshGroup;
+  const f = Math.max(0, Math.min(100, Number(v) || 0)) / 100;
+  if (g) (g.userData.hinges || []).forEach(h => { if (h.av) h.group.quaternion.setFromAxisAngle(h.av, h.fa * f); });
+  if (g && g.userData.boxNet) {
+    g.position.x = -g.userData.shiftX * g.scale.x * f;
+    g.position.z = -g.userData.shiftZ * g.scale.z * f;
+  }
+  if (typeof simUpdate === 'function' && SIM.cut) simUpdate();
+};
+
+const NN = 48, T3 = THREE.Vector3;
+const POLYS = {
+  limas(){ const s=P('s',5)/2, t=P('t',6)/2;
+    return { V:[new T3(-s,-t,-s),new T3(s,-t,-s),new T3(s,-t,s),new T3(-s,-t,s),new T3(0,t,0)], F:[[0,1,2,3],[0,1,4],[1,2,4],[2,3,4],[3,0,4]] }; },
+  prisma(){ const a=P('a',4), ta=P('ta',3), H=P('tp',7)/2, B=[[-a/2,-ta/3],[a/2,-ta/3],[0,2*ta/3]];
+    return { V:[...B.map(q=>new T3(q[0],-H,q[1])),...B.map(q=>new T3(q[0],H,q[1]))],
+             F:[[0,1,2],[3,4,5],...[0,1,2].map(i=>[i,(i+1)%3,3+(i+1)%3,3+i])] }; },
+  tabung(){ const r=P('r',4), t=P('t',8)/2, V=[];
+    for(let k=0;k<2;k++) for(let i=0;i<NN;i++){ const q=2*Math.PI*i/NN; V.push(new T3(r*Math.cos(q),k?t:-t,r*Math.sin(q))); }
+    const R=[...Array(NN).keys()];
+    return { V, F:[R,R.map(i=>i+NN),...R.map(i=>[i,(i+1)%NN,NN+(i+1)%NN,NN+i])] }; },
+  kerucut(){ const r=P('r',4), t=P('t',7)/2, V=[];
+    for(let i=0;i<NN;i++){ const q=2*Math.PI*i/NN; V.push(new T3(r*Math.cos(q),-t,r*Math.sin(q))); }
+    V.push(new T3(0,t,0)); const R=[...Array(NN).keys()];
+    return { V, F:[R,...R.map(i=>[i,(i+1)%NN,NN])] }; }
+};
+
+const chain1 = (c,off,n) => Array.from({length:n},(_,i)=>[off+(c+i)%n, i ? off+(c+i-1)%n : 0]);
+const chain2 = (c,off,n) => { const o=[[off+c,0]];
+  for(let i=1;i<n/2;i++) o.push([off+(c+i)%n, i>1 ? off+(c+i-1)%n : off+c]);
+  for(let i=1;i<=n/2;i++) o.push([off+(c-i+n)%n, i>1 ? off+(c-i+1+n)%n : off+c]);
+  return o; };
+const NETDEF = {
+  limas: [ [[1,0],[2,0],[3,0],[4,0]], [[1,0],[2,0],[3,0],[4,3]], [[1,0],[2,0],[3,2],[4,1]], [[1,0],[2,1],[3,2],[4,3]] ],
+  prisma: [ [[2,0],[3,0],[4,0],[1,2]], [[2,0],[3,0],[4,0],[1,3]], [[2,0],[3,2],[4,3],[1,2]],
+            [[2,0],[3,2],[4,3],[1,3]], [[2,0],[3,2],[4,3],[1,4]], [[3,0],[2,3],[4,3],[1,3]] ],
+  tabung: [ () => [...chain1(0,2,NN),[1,2]], () => [...chain1(0,2,NN),[1,2+NN-1]],
+            () => [...chain2(0,2,NN),[1,2]], () => [...chain2(0,2,NN),[1,2+NN/2]] ],
+  kerucut: [ () => chain2(0,1,NN), () => chain1(0,1,NN) ]
+};
+
+function buildPoly(g, mat, poly, tree){
+  const { V, F } = poly;
+  const nF = F.map(f => {
+    const n = new T3().crossVectors(V[f[1]].clone().sub(V[f[0]]), V[f[2]].clone().sub(V[f[0]])).normalize();
+    const c = f.reduce((s, i) => s.add(V[i]), new T3()).divideScalar(f.length);
+    return n.dot(c) < 0 ? n.negate() : n;
+  });
+  g.userData.hinges = []; g.userData.noNet = false; g.userData.boxNet = true;
+  const mk = (i, P0) => {
+    const f = F[i], pos = [], geo = new THREE.BufferGeometry();
+    for (let k = 1; k < f.length - 1; k++) [f[0], f[k], f[k+1]].forEach(j => { const v = V[j].clone().sub(P0); pos.push(v.x, v.y, v.z); });
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.computeVertexNormals();
+    const m = new THREE.Mesh(geo, mat.clone());
+    m.material.color.setHSL(F.length <= 6 ? i / F.length : (f.length > 8 ? (i ? 0.85 : 0.6) : 0.12), 0.45, 0.55);
+    return m;
+  };
+  const grp = [], piv = [new T3()], root = new THREE.Group();
+  g.add(root); root.add(mk(0, piv[0])); grp[0] = root;
+  tree.forEach(([c, p]) => {
+    const sh = F[c].filter(j => F[p].includes(j)); if (sh.length !== 2) return;
+    const A = V[sh[0]], e = V[sh[1]].clone().sub(A).normalize(), hg = new THREE.Group();
+    hg.position.copy(A).sub(piv[p]); grp[p].add(hg); hg.add(mk(c, A)); grp[c] = hg; piv[c] = A;
+    const d = Math.acos(Math.max(-1, Math.min(1, nF[c].dot(nF[p]))));
+    const dp = nF[c].clone().applyQuaternion(new THREE.Quaternion().setFromAxisAngle(e, d)).dot(nF[p]);
+    const dn = nF[c].clone().applyQuaternion(new THREE.Quaternion().setFromAxisAngle(e, -d)).dot(nF[p]);
+    g.userData.hinges.push({ group: hg, axis: 'x', targetAngle: 0, closed: 0, av: e, fa: dp >= dn ? d : -d });
+  });
+}
+
+function flatOf(g){
+  g.userData.hinges.forEach(h => h.group.quaternion.setFromAxisAngle(h.av, h.fa));
+  g.updateMatrixWorld(true);
+  const out = [];
+  g.traverse(m => {
+    if (!m.isMesh) return;
+    const a = m.geometry.attributes.position, pts = [];
+    for (let k = 0; k < a.count; k++) if (k < 3 || k % 3 === 2) pts.push(m.localToWorld(new T3().fromBufferAttribute(a, k)));
+    out.push(pts.map(q => [q.x, q.z]));
+  });
+  return out;
+}
+function sepAxis(A, B){
+  for (const Pg of [A, B]) for (let i = 0; i < Pg.length; i++) {
+    const [x1, y1] = Pg[i], [x2, y2] = Pg[(i + 1) % Pg.length], nx = y1 - y2, ny = x2 - x1, tol = 1e-3 * Math.hypot(nx, ny);
+    const a = A.map(([x, y]) => x * nx + y * ny), b = B.map(([x, y]) => x * nx + y * ny);
+    if (Math.max(...a) <= Math.min(...b) + tol || Math.max(...b) <= Math.min(...a) + tol) return true;
+  }
+  return false;
+}
+const noOverlap = ps => { for (let i = 0; i < ps.length; i++) for (let j = i + 1; j < ps.length; j++) if (!sepAxis(ps[i], ps[j])) return false; return true; };
+function netSVG(ps){
+  const all = ps.flat(), xs = all.map(q => q[0]), ys = all.map(q => q[1]);
+  const x0 = Math.min(...xs), y0 = Math.min(...ys), w = Math.max(...xs) - x0, h = Math.max(...ys) - y0, m = Math.max(w, h), pd = m * 0.05;
+  return `<svg viewBox="${x0-pd} ${y0-pd} ${w+2*pd} ${h+2*pd}" width="46" height="34">${ps.map(q =>
+    `<polygon points="${q.map(c => c.join(',')).join(' ')}" fill="currentColor" fill-opacity=".3" stroke="currentColor" stroke-width="${m*0.025}"/>`).join('')}</svg>`;
+}
+
+const NETV = {};
+Object.keys(NETDEF).forEach(k => {
+  NETV[k] = [];
+  NETDEF[k].forEach(t => {
+    const tree = typeof t === 'function' ? t : () => t;
+    try {
+      const g = new THREE.Group(); buildPoly(g, new THREE.MeshBasicMaterial(), POLYS[k](), tree());
+      const ps = flatOf(g); if (noOverlap(ps)) NETV[k].push({ tree, svg: netSVG(ps) });
+    } catch (e) {}
+  });
+});
+function polyCreator(k){
+  return (g, mat) => {
+    const v = NETV[k][NETSEL % NETV[k].length];
+    buildPoly(g, mat, POLYS[k](), v.tree());
+    const ps = flatOf(g), xs = ps.flat().map(q => q[0]), zs = ps.flat().map(q => q[1]);
+    g.userData.shiftX = (Math.min(...xs) + Math.max(...xs)) / 2; g.userData.shiftZ = (Math.min(...zs) + Math.max(...zs)) / 2;
+  };
+}
+if (NETV.limas.length)   createPyramid  = polyCreator('limas');
+if (NETV.prisma.length)  createPrism    = polyCreator('prisma');
+if (NETV.tabung.length)  createCylinder = polyCreator('tabung');
+if (NETV.kerucut.length) createCone     = polyCreator('kerucut');
+
+(function injectPicker(){
+  const box = document.createElement('div');
+  box.id = 'netPicker'; box.className = 'hidden space-y-2';
+  box.innerHTML = `
+    <div class="flex items-center justify-between">
+      <span class="text-xs font-bold">Pilih bentuk jaring-jaring</span>
+      <span id="netPickLabel" class="text-[11px] opacity-75"></span>
+    </div>
+    <div id="netThumbs" class="grid grid-cols-4 gap-2"></div>
+    <p id="netNote" class="text-[11px] opacity-70"></p>`;
+  document.getElementById('netUnavailable').after(box);
+})();
+
+function boxThumb(d){
+  return `<div style="display:grid;grid-template-columns:repeat(5,7px);gap:1px">${[...d.join('')].map(ch =>
+    `<i style="width:7px;height:7px;border-radius:1px;background:${ch === '#' ? 'currentColor' : 'transparent'}"></i>`).join('')}</div>`;
+}
+function renderNetPicker(){
+  const k = currentShapeKey, isBox = k === 'kubus' || k === 'balok';
+  const th = isBox ? NET_OK.map(boxThumb) : (NETV[k] || []).map(v => v.svg);
+  const show = th.length > 1;
+  document.getElementById('netPicker').classList.toggle('hidden', !show);
+  if (!show) return;
+  document.getElementById('netPickLabel').textContent = `Jaring ${NETSEL + 1} dari ${th.length}`;
+  document.getElementById('netNote').textContent = `Ada ${th.length} pola jaring untuk bangun ini. Tiap sisi diberi warna berbeda agar mudah dilacak.`;
+  document.getElementById('netThumbs').innerHTML = th.map((h, i) => `
+    <button type="button" onclick="selectNet(${i})" title="Jaring ${i + 1}" class="p-2 rounded-xl flex items-center justify-center ${i === NETSEL ? 'nova-btn-accent' : 'nova-glass-card'}">${h}</button>`).join('');
+}
+
+function selectNet(i){
+  NETSEL = i; renderNetPicker();
+  clearInterval(netTimer);
+  buildShape3D(currentShapeKey);
+  updateNetsUnfold(0); animateNets(100);
+}
+
+const _csNets = changeShape;
+changeShape = function(k){ NETSEL = 0; _csNets(k); renderNetPicker(); };
+renderNetPicker();
+</script>
+
+<!-- VG-FIX: Perbaikan Soal Level 5 -->
+<script>
+quizLevels[4].qs.splice(3, 7, ...Array.from({ length: 7 }, (_, k) => {
+  const r = (k + 2) * 7, a = 440 * (k + 2), b = 154 * (k + 2) ** 2;
+  return {
+    q: `[Level 5 Soal ${k + 4}] Tabung dengan r = ${r} cm dan t = 10 cm. Luas selimut tabung adalah ... cm² (π = 22/7).`,
+    opts: [`${a} cm²`, `${b} cm²`, '100 cm²', '500 cm²'], a: 0,
+    exp: ['L.Selimut = 2πrt', `L = 2 × 22/7 × ${r} × 10 = ${a} cm².`]
+  };
+}));
 </script>
 
 </body>
